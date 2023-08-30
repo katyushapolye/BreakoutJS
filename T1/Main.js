@@ -10,10 +10,12 @@ import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBo
 
 
 import * as Player from "../T1/Player.js";
-
+import * as Block from './Block.js'
+import * as Ball from '../T1/Ball.js';
+import { Scene } from '../build/three.module.js';
 
 //Global defs
-let scene, renderer, camera, material, light; 
+let scene, renderer, camera, material, light;
 
 
 //Init function
@@ -23,8 +25,13 @@ function initGame(){
   scene = new THREE.Scene();    // Create main scene
   renderer = initRenderer();    // Init a basic renderer
 
-  //Criar camera
-  camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
+  camera= initCamera(new THREE.Vector3(0, 0, 0));
+
+// Position the camera along the positive Z axis
+  camera.position.set(0, 0, 35);
+
+// Point the camera at the origin
+  camera.lookAt(0, 0, 0);
 
 
   material = setDefaultMaterial(); // create a basic material
@@ -37,11 +44,24 @@ function initGame(){
   let player = new Player.Player();
   player.PlayerInit();
 
+  //Init of Block grid
+  let blockTest = new Block.Block();
+  blockTest.setPosition(new THREE.Vector3(0,5,0));
+  scene.add(blockTest.getGameObject());
+
+
+  //Init ball
+
+  let ballTest = new Ball.Ball();
+  ballTest.setPosition(new THREE.Vector3(0,3,0));
+
+  scene.add(ballTest.getGameObject());
+
+
 
   
   let plane = createGroundPlaneXZ(20, 20)
   scene.add(plane);
-
 
 
 }
