@@ -7,7 +7,7 @@ export class Ball{
 
     constructor(){
 
-        this.Body = new THREE.Mesh(new THREE.CircleGeometry(0.5),
+        this.Body = new THREE.Mesh(new THREE.CircleGeometry(15),
         new THREE.MeshLambertMaterial({ color:'rgb(128,128,128)'}));
 
     }
