@@ -20,4 +20,14 @@ export class Ball{
     setPosition(newPosition){
         this.Body.position.set(newPosition.x,newPosition.y,newPosition.z);
     }
+
+    //Return the collider
+    getCollider(){
+
+    }
+
+    update(){
+
+        //Update position based on vel and ir
+    }
 }

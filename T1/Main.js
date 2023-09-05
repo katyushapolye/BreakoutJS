@@ -12,7 +12,13 @@ import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBo
 import * as Player from "../T1/Player.js";
 import * as Block from './Block.js'
 import * as Ball from '../T1/Ball.js';
-import { Scene } from '../build/three.module.js';
+import { Scene, Vector3 } from '../build/three.module.js';
+
+
+//Input defs
+
+const pointer = new THREE.Vector2();
+
 
 //Global defs
 let scene = null 
@@ -56,6 +62,15 @@ function onWindowResizeOrt() {
   renderer.setViewport(offsetX, offsetY, targetWidth, targetHeight);
 }
 
+//Calcula pos do mouse na tela em cords normalizada
+function onPointerMove( event ) {
+
+
+	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+
+}
 
 function setupRenderAndCamera(){
     //  Camera Init
@@ -72,6 +87,7 @@ function setupRenderAndCamera(){
 
 
   window.addEventListener( 'resize', onWindowResizeOrt, false );
+  window.addEventListener('pointermove',onPointerMove);
   
   camera.position.set(0, 0, 50);
   camera.lookAt(new THREE.Vector3(0,0,0));
@@ -92,6 +108,24 @@ function setupMaterialAndLights(){
   material = setDefaultMaterial(); // create a basic material
   light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 }
+
+//Retuns the first point of intersection of a raycast from the camera, directed at the mouse position(normalized), colliding with the BG
+// Returns the first point of intersection of a raycast from the camera, directed at the mouse position (normalized),
+// colliding with the BG
+function rayCastPositionOnBG() {
+  let rayOrigin = new THREE.Vector3(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
+  let rayDir = new THREE.Vector3(0, 0, -1);
+  let raycast = new THREE.Raycaster(rayOrigin, rayDir);
+  let intersections = raycast.intersectObjects([BG], false);
+
+  if (intersections.length > 0) {
+    console.log(intersections[0].point)
+    return intersections[0].point;
+  } else {
+    return new THREE.Vector3(0, 0, 0); // Return a default point when there are no intersections.
+  }
+}
+
 
 function setupScene(){
   scene = new THREE.Scene();
@@ -116,8 +150,8 @@ function createBoard(){
 
 function createBackGround(){
 
-  const planeWidth = 1000;
-  const planeHeight = 1000;
+  const planeWidth = 10000;
+  const planeHeight = 10000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
   BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
   
@@ -139,8 +173,14 @@ function initGame(){
 
 
   //Init of player
-  player = new Player.Player();
-  player.PlayerInit();
+  player = new Player.Player()
+  scene.add(player.getGameObject());
+  player.setPosition(new THREE.Vector3(0,-250,0));
+
+
+
+
+  //Init board
 
   createBoard();
   createBackGround();
@@ -168,8 +208,19 @@ function gameLoop(){
 
   //Handle input (Raycast to world cords)
 
+  let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,-250,0);
+
+
+
 
   //Process Game logic (Check colision/Reflection,Check death and collision culling,move player to target position)
+  player.move(pTarget);
+  player.update();
+  //ballTest.update();
+
+
+  //= = = = RAY CAST TEST RAY CAST TEST = = = =
+
 
 
   //Render (Self explanatory)

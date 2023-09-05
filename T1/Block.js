@@ -33,6 +33,11 @@ export class Block{
         return this.BLOCK_W;
     }
 
+    //returns the collidr;
+    getCollider(){
+        return;
+    }
+
 
 
     getGameObject(){
