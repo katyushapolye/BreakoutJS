@@ -3,6 +3,7 @@
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
+import KeyboardState from '../libs/util/KeyboardState.js'
 
 
 
@@ -13,6 +14,8 @@ import * as Player from "../T1/Player.js";
 import * as Block from './Block.js'
 import * as Ball from '../T1/Ball.js';
 import { Scene, Vector3 } from '../build/three.module.js';
+
+import { calculateReflection } from './Utils.js';
 
 
 //Input defs
@@ -26,14 +29,21 @@ let renderer = null;
 let camera = null;
 let material = null;
 let light = null;
+var keyboard = new KeyboardState();
 
 //Game defs
 
 const WORLD_H = 800;
 const WORLD_W = 400;
+let ball = null;
 let player = null;
 let BG = null;
 let GAME_BOARD = Array(8).fill().map(() => Array(14).fill(0)); //EU não sei o que é isso
+
+//Game control defs
+
+let isPlayerWithBall = true
+
 
 
 function onWindowResizeOrt() {
@@ -119,7 +129,7 @@ function rayCastPositionOnBG() {
   let intersections = raycast.intersectObjects([BG], false);
 
   if (intersections.length > 0) {
-    console.log(intersections[0].point)
+    //console.log(intersections[0].point)
     return intersections[0].point;
   } else {
     return new THREE.Vector3(0, 0, 0); // Return a default point when there are no intersections.
@@ -135,14 +145,15 @@ function setupScene(){
 function createBoard(){
 
   //Mexer aqui para criar tabuleiros foda, ajustar valores max de 8 e 16 baseado no tamanho do bloco
-  for(let i = 0;i<8;i++){
-    for(let j = 0;j<16;j++){
+  for(let i = 0;i<4;i++){
+    for(let j = 0;j<8;j++){
 
       GAME_BOARD[i][j] = new Block.Block();
       GAME_BOARD[i][j].setPosition(new THREE.Vector3((j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 ,
       (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
       0));
       scene.add(GAME_BOARD[i][j].getGameObject());
+      GAME_BOARD[i][j].updateCollider();
     }
   }
 
@@ -161,6 +172,71 @@ function createBackGround(){
   scene.add(BG);
 
 
+}
+
+function checkCollisionBoard(){
+
+  for(let i = 0;i<4;i++){
+    for(let j = 0;j<8;j++){
+      if(GAME_BOARD[i][j] == null){
+        continue;
+      }
+
+      let blockCol = GAME_BOARD[i][j].getCollider();
+      let ballCol = ball.getCollider();
+
+      let blockNormal = null; //new THREE.Vector3(0,-1,0); // need to change if it is a side collision or down ou, you know
+
+      if(ballCol.intersectsBox(blockCol)){
+
+
+        //Change here if you want the normal to be of the face instead of the collision
+         blockNormal = ball.getPosition().clone().sub(GAME_BOARD[i][j].getPosition()).normalize()
+
+         ball.setDirection(calculateReflection(ball.getDirection(),blockNormal));
+
+
+
+         scene.remove(GAME_BOARD[i][j].getGameObject());
+         GAME_BOARD[i][j] = null;
+         return;
+
+      }
+     
+    }
+  }
+
+
+}
+
+function checkCollisionPlayer(){
+
+  let pColliders = player.getColliders();
+  for(let i =0;i<5;i++){
+      if(pColliders[i].intersectsBox(ball.getCollider())){
+
+        //Minimum angle of reflection here
+        ball.setDirection(calculateReflection(ball.getDirection(),player.getNormals()[i]));
+        return;
+      }
+  }
+
+}
+
+function checkCollisionWall(){
+
+  if(ball.getPosition().x > (WORLD_W/2)){
+    ball.setDirection(calculateReflection(ball.getDirection(),new THREE.Vector3(-1,0,0)));
+    
+  }
+  if(ball.getPosition().x < -(WORLD_W/2)){
+    ball.setDirection(calculateReflection(ball.getDirection(),new THREE.Vector3(1,0,0)));
+  }
+
+  if(ball.getPosition().y > (WORLD_H/2)){
+    ball.setDirection(calculateReflection(ball.getDirection(),new THREE.Vector3(0,-1,0)));
+
+  }
 }
 
 //Init function
@@ -186,9 +262,9 @@ function initGame(){
   createBackGround();
 
   //Init ball
-  let ballTest = new Ball.Ball();
-  ballTest.setPosition(new THREE.Vector3(0,-0,0));
-  scene.add(ballTest.getGameObject());
+  ball = new Ball.Ball();
+  ball.setPosition(new THREE.Vector3(0,-0,0));
+  scene.add(ball.getGameObject());
 
 
 
@@ -207,8 +283,16 @@ function initGame(){
 function gameLoop(){
 
   //Handle input (Raycast to world cords)
-
+  keyboard.update();
   let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,-250,0);
+  if ( keyboard.down("space") ){
+
+    isPlayerWithBall = false;
+    ball.setDirection(new THREE.Vector3(0,1,0));
+    console.log("Ball is Released");
+  }
+  
+
 
 
 
@@ -216,7 +300,20 @@ function gameLoop(){
   //Process Game logic (Check colision/Reflection,Check death and collision culling,move player to target position)
   player.move(pTarget);
   player.update();
-  //ballTest.update();
+
+
+  if(isPlayerWithBall){
+
+    //Little offset so it should right above the player
+    let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+15,0);
+    ball.setPosition(ballPos);
+  }
+  ball.update();
+
+  checkCollisionBoard();
+  checkCollisionWall();
+  checkCollisionPlayer();
+
 
 
   //= = = = RAY CAST TEST RAY CAST TEST = = = =

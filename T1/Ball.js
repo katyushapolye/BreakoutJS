@@ -3,31 +3,51 @@ export class Ball{
 
     DirectionVet =  new THREE.Vector3(0,0,0);
 
+    speed = 5.0;
+
     Body = null
+    collider = null;
 
     constructor(){
 
-        this.Body = new THREE.Mesh(new THREE.CircleGeometry(15),
+        this.Body = new THREE.Mesh(new THREE.CircleGeometry(8),
         new THREE.MeshLambertMaterial({ color:'rgb(128,128,128)'}));
+        this.collider = new THREE.Box3();
+        this.Body.geometry.computeBoundingBox();
+        this.collider.copy(this.Body.geometry.boundingBox);
 
     }
 
     getGameObject(){
 
-        return this.Body
+        return this.Body;
     }
 
     setPosition(newPosition){
         this.Body.position.set(newPosition.x,newPosition.y,newPosition.z);
     }
 
-    //Return the collider
-    getCollider(){
-
+    getPosition(){
+        return this.Body.position;
     }
 
+    setDirection(newDir){
+        this.DirectionVet = newDir;
+    }
+    getDirection(){
+        return this.DirectionVet;
+    }
+
+    //Return the collider
+    getCollider(){
+        return this.collider;
+
+    }
+    //NO lerp movment 4 the ball -> we need full control
     update(){
 
+        this.Body.position.set(this.Body.position.x + this.DirectionVet.x*this.speed,this.Body.position.y + this.DirectionVet.y*this.speed,0)
+        this.collider.setFromObject(this.Body,true);
         //Update position based on vel and ir
     }
 }

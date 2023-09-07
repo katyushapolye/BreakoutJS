@@ -10,7 +10,9 @@ export class Player{
 
     parent = null; //Gameobject to tie all other blocks
     normals = [];
-    blocks = []
+    blocks = [];
+
+    colliders = [];
 
     targetPos = new THREE.Vector3(0,-250,0); //Position to move to
 
@@ -27,6 +29,15 @@ export class Player{
             this.blocks[i].position.set(-40+(i*20),0,0);
 
             //Normals init
+
+            this.normals.push(new THREE.Vector3(0,1,0));
+            this.colliders.push(new THREE.Box3());
+            this.blocks[i].geometry.computeBoundingBox();
+            this.colliders[i].copy(this.blocks[i].geometry.boundingBox);
+
+
+
+
 
             
         }
@@ -48,6 +59,10 @@ export class Player{
         this.parent.position.set(newPosition.x,newPosition.y,newPosition.z);
     }
 
+    getPosition(){
+        return this.parent.position;
+    }
+
     //sets the targetPosition as newPosition to player go
     move(newPosition){
 
@@ -58,13 +73,10 @@ export class Player{
     //Returns all of the box colliders
     getColliders(){
 
-        return;
+        return this.colliders;
     }
-
-    recieveInput(xInput){
-
-        
-
+    getNormals(){
+        return this.normals;
     }
 
     update(){
@@ -72,8 +84,10 @@ export class Player{
         this.parent.position.lerp(this.targetPos,0.2);
         //Update colliders for each box
 
-        
-        
+        for(let i = 0;i<5;i++){
+            this.colliders[i].setFromObject(this.blocks[i],true);
+        }
+
 
         return;
     }
