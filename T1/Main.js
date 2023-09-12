@@ -209,7 +209,6 @@ function checkCollisionBoard(){
 
 
 }
-
 function checkCollisionPlayer(){
 
   let pColliders = player.getColliders();
@@ -218,12 +217,50 @@ function checkCollisionPlayer(){
 
         //Minimum angle of reflection here
         ball.setDirection(calculateReflection(ball.getDirection(),player.getNormals()[i]));
+        console.log("Expected Collision: " + ball.getDirection().x.toString() + "," + ball.getDirection().y.toString());
+
+        let minimumVet = ball.getDirection();
+        //Acho que só precisa do ultimo if
+        if(ball.getDirection().x > (Math.sqrt(3)/2) && ball.getDirection().y < 0.51){
+          minimumVet.x =  (Math.sqrt(3)/2);
+          minimumVet.y = 0.5;
+        
+        }
+
+        if(ball.getDirection().x < (-(Math.sqrt(3)/2)) && ball.getDirection().y < 0.51){
+          minimumVet.x =  -(Math.sqrt(3)/2);
+          minimumVet.y = 0.5;
+        }
+
+        if(ball.getDirection().y < 0.5){
+          minimumVet.y = 0.5;
+          if(ball.getDirection().x < (-Math.sqrt(3)/2)){
+            minimumVet.x =  -(Math.sqrt(3)/2);
+          }
+
+          if(ball.getDirection().x > Math.sqrt(3)/2){
+            minimumVet.x =  Math.sqrt(3)/2;
+
+
+        };
+      }
+      minimumVet.normalize();
+
+
+        ball.setDirection(minimumVet);
+
+
+        //Little cheat for double collision culling
+        //Collision timeout for avoid doublle
+        ball.setPosition(new Vector3(ball.getPosition().x,ball.getPosition().y+15,0));
+
+        
+        
         return;
       }
-  }
+  } 
 
 }
-
 function checkCollisionWall(){
 
   if(ball.getPosition().x > (WORLD_W/2)){
@@ -306,7 +343,7 @@ function gameLoop(){
   if(isPlayerWithBall){
 
     //Little offset so it should right above the player
-    let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+15,0);
+    let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+20,0);
     ball.setPosition(ballPos);
   }
   ball.update();

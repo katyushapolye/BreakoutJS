@@ -36,7 +36,18 @@ export class Player{
             this.colliders[i].copy(this.blocks[i].geometry.boundingBox);
         
         }
-        //resolver o problema das normais
+
+        this.normals[0] = new THREE.Vector3(-1,1,0);
+        this.normals[1] = new THREE.Vector3(-1,1,0);
+
+        this.normals[3] = new THREE.Vector3(1,1,0);
+        this.normals[4] = new THREE.Vector3(1,1,0);
+
+        this.normals[0].normalize();
+        this.normals[1].normalize();
+        this.normals[3].normalize();
+        this.normals[4].normalize();
+        
         
 
         
