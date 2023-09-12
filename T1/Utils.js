@@ -7,7 +7,9 @@ import * as THREE from  'three';
 // retorno 1, 1
 
 function calculateReflection(direction, normal) {
+    
     var ray = new THREE.Vector3();
+    
 
     var dotResult = direction.dot(normal);
 
@@ -18,4 +20,29 @@ function calculateReflection(direction, normal) {
     return ray
 }
 
+function checkFaceColision(retPosition, ballPos){
+    let blockNormal = null;
+    if(ballPos.y<(retPosition.y-7.5)){
+      return blockNormal = new THREE.Vector3(0,-1,0);
+      
+    
+    }
+    if(ballPos.x<(retPosition.x-25) && ballPos.y<=(retPosition.y+7.5) && ballPos.y>=(retPosition.y-7.5)){
+      return blockNormal = new THREE.Vector3(-1,0,0);
+      
+    }
+    if(ballPos.x>(retPosition.x+25) && ballPos.y<=(retPosition.y+7.5) && ballPos.y>=(retPosition.y-7.5)){
+      return blockNormal = new THREE.Vector3(1,0,0);
+      
+    }
+    if(ballPos.y>(retPosition.y+7.5)){
+      return blockNormal = new THREE.Vector3(0,1,0);
+      
+    }
+
+    
+
+}
+
 export{calculateReflection}
+export{checkFaceColision}

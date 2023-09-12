@@ -34,13 +34,12 @@ export class Player{
             this.colliders.push(new THREE.Box3());
             this.blocks[i].geometry.computeBoundingBox();
             this.colliders[i].copy(this.blocks[i].geometry.boundingBox);
-
-
-
-
-
-            
+        
         }
+        //resolver o problema das normais
+        
+
+        
 
     }
 

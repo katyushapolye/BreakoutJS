@@ -15,7 +15,7 @@ import * as Block from './Block.js'
 import * as Ball from '../T1/Ball.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
-import { calculateReflection } from './Utils.js';
+import { calculateReflection, checkFaceColision } from './Utils.js';
 
 
 //Input defs
@@ -38,6 +38,8 @@ const WORLD_W = 400;
 let ball = null;
 let player = null;
 let BG = null;
+let retPosition;
+let ballPos;
 let GAME_BOARD = Array(8).fill().map(() => Array(14).fill(0)); //EU não sei o que é isso
 
 //Game control defs
@@ -189,17 +191,16 @@ function checkCollisionBoard(){
 
       if(ballCol.intersectsBox(blockCol)){
 
+        retPosition = GAME_BOARD[i][j].getPosition();
+        ballPos= ball.getPosition();
+        
+        blockNormal= checkFaceColision(retPosition, ballPos);
+        ball.setDirection(calculateReflection(ball.getDirection(),blockNormal))
+        
 
-        //Change here if you want the normal to be of the face instead of the collision
-         blockNormal = ball.getPosition().clone().sub(GAME_BOARD[i][j].getPosition()).normalize()
-
-         ball.setDirection(calculateReflection(ball.getDirection(),blockNormal));
-
-
-
-         scene.remove(GAME_BOARD[i][j].getGameObject());
-         GAME_BOARD[i][j] = null;
-         return;
+        scene.remove(GAME_BOARD[i][j].getGameObject());
+        GAME_BOARD[i][j] = null;
+        return;
 
       }
      
