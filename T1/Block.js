@@ -12,15 +12,18 @@ export class Block{
     
 
     //Talvez seja legal passar a cor como parametro do construtor
-    constructor(){
+    constructor(color = null){
         console.log("Block created ")
+        let colorRand = color;
+        if(color == null){
         let r = Math.floor(Math.random()*256);
         let g = Math.floor(Math.random()*256);
         let b = Math.floor(Math.random()*256);
-
+            
 
         let colorRand = 'rgb(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ')';
-
+        
+        }
         console.log("Block Color = " + colorRand);
         this.Body = new THREE.Mesh(new THREE.BoxGeometry(this.BLOCK_W,this.BLOCK_H,10),
         new THREE.MeshLambertMaterial({ color:colorRand}));
@@ -38,6 +41,10 @@ export class Block{
     }
     getWidth(){
         return this.BLOCK_W;
+    }
+
+    setColor(color){
+            this.Body.material.color = new THREE.Color(color);
     }
 
     //returns the collidr;

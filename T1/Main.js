@@ -40,7 +40,7 @@ let player = null;
 let BG = null;
 let retPosition;
 let ballPos;
-let GAME_BOARD = Array(8).fill().map(() => Array(14).fill(0)); //EU não sei o que é isso
+let GAME_BOARD = Array(8).fill().map(() => Array(8).fill(0)); //EU não sei o que é isso
 
 //Game control defs
 
@@ -147,17 +147,34 @@ function setupScene(){
 function createBoard(){
 
   //Mexer aqui para criar tabuleiros foda, ajustar valores max de 8 e 16 baseado no tamanho do bloco
-  for(let i = 0;i<4;i++){
+
+  //Cores legais
+
+  let cores = [];
+
+  cores.push("rgb(230,80,80)"); //red
+  cores.push("rgb(80,230,80)"); //green
+  cores.push("rgb(80,80,230)") //blue
+  cores.push("rgb(230,230,80)"); //yellow
+  cores.push("rgb(230,80,230)"); //purple
+
+  for(let i = 0;i<8;i++){
     for(let j = 0;j<8;j++){
 
-      GAME_BOARD[i][j] = new Block.Block();
+      let colorIndex =  i%(cores.length);
+      GAME_BOARD[i][j] = new Block.Block(cores[colorIndex]);
       GAME_BOARD[i][j].setPosition(new THREE.Vector3((j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 ,
       (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
       0));
       scene.add(GAME_BOARD[i][j].getGameObject());
       GAME_BOARD[i][j].updateCollider();
+
     }
   }
+
+
+
+
 
 }
 
@@ -166,7 +183,7 @@ function createBackGround(){
   const planeWidth = 10000;
   const planeHeight = 10000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
+  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(30,30,120)'));
   
   // Position the plane at the XY plane
   
@@ -212,25 +229,17 @@ function checkCollisionBoard(){
 function checkCollisionPlayer(){
 
   let pColliders = player.getColliders();
+  if(ball.getDirection().y >= 0){
+    return;
+  }
   for(let i =0;i<5;i++){
       if(pColliders[i].intersectsBox(ball.getCollider())){
 
         //Minimum angle of reflection here
         ball.setDirection(calculateReflection(ball.getDirection(),player.getNormals()[i]));
-        console.log("Expected Collision: " + ball.getDirection().x.toString() + "," + ball.getDirection().y.toString());
 
         let minimumVet = ball.getDirection();
-        //Acho que só precisa do ultimo if
-        if(ball.getDirection().x > (Math.sqrt(3)/2) && ball.getDirection().y < 0.51){
-          minimumVet.x =  (Math.sqrt(3)/2);
-          minimumVet.y = 0.5;
-        
-        }
 
-        if(ball.getDirection().x < (-(Math.sqrt(3)/2)) && ball.getDirection().y < 0.51){
-          minimumVet.x =  -(Math.sqrt(3)/2);
-          minimumVet.y = 0.5;
-        }
 
         if(ball.getDirection().y < 0.5){
           minimumVet.y = 0.5;
@@ -245,17 +254,15 @@ function checkCollisionPlayer(){
         };
       }
       minimumVet.normalize();
-
-
-        ball.setDirection(minimumVet);
+      ball.setDirection(minimumVet);
 
 
         //Little cheat for double collision culling
         //Collision timeout for avoid doublle
-        ball.setPosition(new Vector3(ball.getPosition().x,ball.getPosition().y+15,0));
+        //ball.setPosition(new Vector3(ball.getPosition().x,ball.getPosition().y+15,0));
 
         
-        
+
         return;
       }
   } 

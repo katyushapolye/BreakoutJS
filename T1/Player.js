@@ -37,11 +37,11 @@ export class Player{
         
         }
 
-        this.normals[0] = new THREE.Vector3(-1,1,0);
-        this.normals[1] = new THREE.Vector3(-1,1,0);
+        this.normals[0] = new THREE.Vector3(-0.866025,0.5,0); //30 grau
+        this.normals[1] = new THREE.Vector3(-1,1,0); //45 grau
 
         this.normals[3] = new THREE.Vector3(1,1,0);
-        this.normals[4] = new THREE.Vector3(1,1,0);
+        this.normals[4] = new THREE.Vector3(0.866025,0.5,0);
 
         this.normals[0].normalize();
         this.normals[1].normalize();
