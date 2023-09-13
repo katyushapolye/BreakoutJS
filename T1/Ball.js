@@ -11,7 +11,7 @@ export class Ball{
     constructor(){
 
         this.Body = new THREE.Mesh(new THREE.CircleGeometry(8),
-        new THREE.MeshLambertMaterial({ color:'rgb(128,128,128)'}));
+        new THREE.MeshLambertMaterial({ color:'rgb(64, 64, 64)'}));
         this.collider = new THREE.Box3();
         this.Body.geometry.computeBoundingBox();
         this.collider.copy(this.Body.geometry.boundingBox);

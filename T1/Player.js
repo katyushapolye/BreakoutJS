@@ -24,7 +24,7 @@ export class Player{
 
         for(let i = 0;i<5;i++){
             this.blocks.push(new THREE.Mesh(new THREE.BoxGeometry(20,20,3),
-            new THREE.MeshLambertMaterial({ color:'rgb(230,30,30)'})));
+            new THREE.MeshLambertMaterial({ color:'rgb(255,50,50)'})));
             this.parent.add(this.blocks[i]);
             this.blocks[i].position.set(-40+(i*20),0,0);
 

@@ -6,6 +6,10 @@ export class Block{
 
     collider = null;
 
+    margin = null;
+    
+    collided = false;
+
     BLOCK_H = 15;
     BLOCK_W = 50;
 
@@ -32,8 +36,8 @@ export class Block{
 
         this.Body.geometry.computeBoundingBox();
         this.collider.copy(this.Body.geometry.boundingBox);
-    
 
+        this.margin = new THREE.BoxHelper(this.Body, 0x00000)
     }
 
     getHeight(){
@@ -61,11 +65,17 @@ export class Block{
 
     }
 
-
+    isCollided(){
+        return this.collided;
+    }
 
     getGameObject(){
 
-        return this.Body
+        return this.Body;
+    }
+
+    getObjectMargin(){
+        return this.margin;
     }
 
     setPosition(newPosition){

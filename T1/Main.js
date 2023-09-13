@@ -15,7 +15,7 @@ import * as Block from './Block.js'
 import * as Ball from '../T1/Ball.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
-import { calculateReflection, checkFaceColision } from './Utils.js';
+import { calculateReflection, checkFaceColision, switchFullScreen } from './Utils.js';
 
 
 //Input defs
@@ -45,6 +45,9 @@ let GAME_BOARD = Array(8).fill().map(() => Array(8).fill(0)); //EU não sei o qu
 //Game control defs
 
 let isPlayerWithBall = true
+let isFullScreen = false
+let simulationOn = true
+let win = 0;
 
 
 
@@ -152,11 +155,11 @@ function createBoard(){
 
   let cores = [];
 
-  cores.push("rgb(230,80,80)"); //red
-  cores.push("rgb(80,230,80)"); //green
-  cores.push("rgb(80,80,230)") //blue
-  cores.push("rgb(230,230,80)"); //yellow
-  cores.push("rgb(230,80,230)"); //purple
+  cores.push("rgb(255,100,100)"); //red
+  cores.push("rgb(100,255,100)"); //green
+  cores.push("rgb(100,100,255)") //blue
+  cores.push("rgb(255,255,100)"); //yellow
+  cores.push("rgb(255,100,255)"); //purple
 
   for(let i = 0;i<8;i++){
     for(let j = 0;j<8;j++){
@@ -167,7 +170,9 @@ function createBoard(){
       (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
       0));
       scene.add(GAME_BOARD[i][j].getGameObject());
+      scene.add(GAME_BOARD[i][j].getObjectMargin());
       GAME_BOARD[i][j].updateCollider();
+      GAME_BOARD[i][j].getObjectMargin().update();
 
     }
   }
@@ -183,7 +188,7 @@ function createBackGround(){
   const planeWidth = 10000;
   const planeHeight = 10000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(30,30,120)'));
+  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
   
   // Position the plane at the XY plane
   
@@ -194,10 +199,12 @@ function createBackGround(){
 }
 
 function checkCollisionBoard(){
+  win = 0; 
 
-  for(let i = 0;i<4;i++){
+  for(let i = 0;i<8;i++){
     for(let j = 0;j<8;j++){
-      if(GAME_BOARD[i][j] == null){
+      if(GAME_BOARD[i][j].collided){
+        win = win + 1
         continue;
       }
 
@@ -216,16 +223,21 @@ function checkCollisionBoard(){
         
 
         scene.remove(GAME_BOARD[i][j].getGameObject());
-        GAME_BOARD[i][j] = null;
+        scene.remove(GAME_BOARD[i][j].getObjectMargin());
+        GAME_BOARD[i][j].collided = true;
+        // GAME_BOARD[i][j] = null;
         return;
 
       }
-     
     }
   }
 
-
+  // se todos estiverem colididos
+  if(win >= 64) {
+    simulationOn = false;
+  }
 }
+
 function checkCollisionPlayer(){
 
   let pColliders = player.getColliders();
@@ -268,6 +280,7 @@ function checkCollisionPlayer(){
   } 
 
 }
+
 function checkCollisionWall(){
 
   if(ball.getPosition().x > (WORLD_W/2)){
@@ -282,6 +295,62 @@ function checkCollisionWall(){
     ball.setDirection(calculateReflection(ball.getDirection(),new THREE.Vector3(0,-1,0)));
 
   }
+}
+
+// Check defeat
+function checkDefeat(){
+  if(ball.getPosition().y < -500) {
+    ball.setPosition(new THREE.Vector3(0,-0,0));
+    isPlayerWithBall = true;
+  }
+}
+
+let checkMouse = (event) => {
+  if(simulationOn) {
+    if(event.button == 0) {
+      if(isPlayerWithBall) {
+        // esse if é necessário porque se não sempre que apertar space a bola sobe
+        isPlayerWithBall = false;
+        ball.setDirection(new THREE.Vector3(0,1,0));
+        console.log("Ball is Released");
+      }
+    }
+  }
+}
+
+
+window.addEventListener('click', checkMouse)
+
+
+function checkKeyboard(){
+  if ( keyboard.down("space") ){
+    simulationOn = !simulationOn;
+  }
+
+  if(simulationOn) {
+    if ( keyboard.down("R") ){
+      win = 0;
+
+      for(let i = 0;i<8;i++){
+        for(let j = 0;j<8;j++){
+          if(GAME_BOARD[i][j].collided) {
+            scene.add(GAME_BOARD[i][j].getGameObject());
+            scene.add(GAME_BOARD[i][j].getObjectMargin());
+            GAME_BOARD[i][j].collided = false;
+          }
+        }
+      }
+      
+      ball.setPosition(new THREE.Vector3(0,-0,0));
+      isPlayerWithBall = true;
+    }
+  
+    if ( keyboard.down("enter") ){
+      isFullScreen = !isFullScreen
+      switchFullScreen(isFullScreen);
+    }
+  }
+  
 }
 
 //Init function
@@ -311,12 +380,7 @@ function initGame(){
   ball.setPosition(new THREE.Vector3(0,-0,0));
   scene.add(ball.getGameObject());
 
-
-
-
-
-
-
+  win = 0;
 
 }
 
@@ -330,21 +394,17 @@ function gameLoop(){
   //Handle input (Raycast to world cords)
   keyboard.update();
   let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,-250,0);
-  if ( keyboard.down("space") ){
 
-    isPlayerWithBall = false;
-    ball.setDirection(new THREE.Vector3(0,1,0));
-    console.log("Ball is Released");
-  }
-  
-
-
-
+  if(win < 64) checkKeyboard();
 
 
   //Process Game logic (Check colision/Reflection,Check death and collision culling,move player to target position)
-  player.move(pTarget);
-  player.update();
+  
+  if(simulationOn) {
+    player.move(pTarget);
+    player.update();
+  }
+  
 
 
   if(isPlayerWithBall){
@@ -353,11 +413,15 @@ function gameLoop(){
     let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+20,0);
     ball.setPosition(ballPos);
   }
-  ball.update();
 
+  if(simulationOn) {
+    ball.update();
+  }
+  
   checkCollisionBoard();
   checkCollisionWall();
   checkCollisionPlayer();
+  checkDefeat();
 
 
 
