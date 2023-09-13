@@ -49,6 +49,13 @@ let isFullScreen = false
 let simulationOn = true
 let win = 0;
 
+//Raycast defs
+
+const rayOrigin = new THREE.Vector3();
+const rayDir = new THREE.Vector3(0, 0, -1);
+const raycast = new THREE.Raycaster();
+let intersections;
+
 
 
 function onWindowResizeOrt() {
@@ -128,10 +135,9 @@ function setupMaterialAndLights(){
 // Returns the first point of intersection of a raycast from the camera, directed at the mouse position (normalized),
 // colliding with the BG
 function rayCastPositionOnBG() {
-  let rayOrigin = new THREE.Vector3(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
-  let rayDir = new THREE.Vector3(0, 0, -1);
-  let raycast = new THREE.Raycaster(rayOrigin, rayDir);
-  let intersections = raycast.intersectObjects([BG], false);
+  rayOrigin.set(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
+  raycast.set(rayOrigin, rayDir);
+  intersections = raycast.intersectObjects([BG], false);
 
   if (intersections.length > 0) {
     //console.log(intersections[0].point)
@@ -188,7 +194,7 @@ function createBackGround(){
   const planeWidth = 10000;
   const planeHeight = 10000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
+  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(60,60,180)'));
   
   // Position the plane at the XY plane
   

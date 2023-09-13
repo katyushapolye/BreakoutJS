@@ -92,6 +92,12 @@ export class Player{
     update(){
 
         this.parent.position.lerp(this.targetPos,0.2);
+        if(this.parent.position.x>150){
+            this.parent.position.set(150, -250, 0);
+        }
+        if(this.parent.position.x<-150){
+            this.parent.position.set(-150, -250, 0);
+        }
         //Update colliders for each box
 
         for(let i = 0;i<5;i++){
