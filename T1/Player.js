@@ -14,6 +14,9 @@ export class Player{
 
     colliders = [];
 
+
+    debug = null;
+
     targetPos = new THREE.Vector3(0,-250,0); //Position to move to
 
 
@@ -22,8 +25,25 @@ export class Player{
         this.parent = new THREE.Object3D();
         this.parent.position.set(0,-300,0);
 
+        //Create CSG 
+
+        
+        let CylinderMesh = new THREE.Mesh(new THREE.CylinderGeometry(50,50,40))
+        CylinderMesh.material = new THREE.MeshLambertMaterial({color:'rgb(255,50,50)'})
+        CylinderMesh.rotateX(3.1415/2);
+        CylinderMesh.position.set(0,-260,0)
+
+
+        let CutMesh = new THREE.Mesh(new THREE.BoxGeometry(60,60,50))
+        CutMesh.material = new THREE.MeshLambertMaterial({color:'rgb(50,250,50)'})
+
+        this.debug = CylinderMesh;
+        
+
+
+
         for(let i = 0;i<5;i++){
-            this.blocks.push(new THREE.Mesh(new THREE.BoxGeometry(20,20,3),
+            this.blocks.push(new THREE.Mesh(new THREE.BoxGeometry(20,20,40),
             new THREE.MeshLambertMaterial({ color:'rgb(255,50,50)'})));
             this.parent.add(this.blocks[i]);
             this.blocks[i].position.set(-40+(i*20),0,0);
@@ -47,6 +67,7 @@ export class Player{
         this.normals[1].normalize();
         this.normals[3].normalize();
         this.normals[4].normalize();
+
         
         
 
@@ -61,6 +82,10 @@ export class Player{
 }
     getGameObject(){
         return this.parent;
+    }
+
+    getDebug(){
+        return this.debug;
     }
 
 

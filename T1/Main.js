@@ -59,6 +59,7 @@ let intersections;
 
 
 function onWindowResizeOrt() {
+  /*
   console.log("Resizing Camera");
   const newWidth = window.innerWidth;
   const newHeight = window.innerHeight;
@@ -82,6 +83,7 @@ function onWindowResizeOrt() {
 
   renderer.setSize(newWidth, newHeight);
   renderer.setViewport(offsetX, offsetY, targetWidth, targetHeight);
+  */
 }
 
 //Calcula pos do mouse na tela em cords normalizada
@@ -96,31 +98,24 @@ function onPointerMove( event ) {
 
 function setupRenderAndCamera(){
     //  Camera Init
-    let viewWidth =  WORLD_H;
+    let viewWidth =  WORLD_W;
     let viewHeight = WORLD_H;
-    camera = new THREE.OrthographicCamera(
-      -viewWidth,
-      viewWidth,
-      viewHeight,
-      -viewHeight,
-      1,
-      1000
-    );
+    
+    camera = new THREE.PerspectiveCamera(50,0.5,1,2000)
 
 
-  window.addEventListener( 'resize', onWindowResizeOrt, false );
-  window.addEventListener('pointermove',onPointerMove);
+    window.addEventListener( 'resize', onWindowResizeOrt, false );
+    window.addEventListener('pointermove',onPointerMove);
   
-  camera.position.set(0, 0, 50);
-  camera.lookAt(new THREE.Vector3(0,0,0));
-
+    camera.position.set(0, 250, 1000);
+    camera.lookAt(new THREE.Vector3(0,0,0));
 
 
   //Renderer Init
-  renderer = initRenderer();    // Init a basic renderer
-  renderer.setSize(viewWidth,viewHeight);
+    renderer = initRenderer();    // Init a basic renderer
+    renderer.setSize(viewWidth,viewHeight);
 
-    onWindowResizeOrt(); //SO por precaução
+  //onWindowResizeOrt(); //SO por precaução
 
 }
 
@@ -196,6 +191,7 @@ function createBackGround(){
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
   BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(60,60,180)'));
   
+  BG.position.set(0,0,-100)
   // Position the plane at the XY plane
   
 
@@ -372,6 +368,8 @@ function initGame(){
   player = new Player.Player()
   scene.add(player.getGameObject());
   player.setPosition(new THREE.Vector3(0,-250,0));
+
+  scene.add(player.getDebug())
 
 
 
