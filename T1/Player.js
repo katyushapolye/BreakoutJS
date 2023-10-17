@@ -37,7 +37,7 @@ export class Player{
         let CutMesh = new THREE.Mesh(new THREE.BoxGeometry(60,60,50))
         CutMesh.material = new THREE.MeshLambertMaterial({color:'rgb(50,250,50)'})
 
-        this.debug = CylinderMesh;
+        this.debug = CylinderMesh   ;
         
 
 
