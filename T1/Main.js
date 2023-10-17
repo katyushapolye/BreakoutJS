@@ -107,12 +107,12 @@ function setupRenderAndCamera(){
     window.addEventListener( 'resize', onWindowResizeOrt, false );
     window.addEventListener('pointermove',onPointerMove);
   
-    camera.position.set(0, 250, 1000);
+    camera.position.set(0, 0, 1000);
     camera.lookAt(new THREE.Vector3(0,0,0));
 
 
   //Renderer Init
-    renderer = initRenderer();    // Init a basic renderer
+    renderer = initRenderer();    // Init a basic renderer, alreaday has a shadowmap
     renderer.setSize(viewWidth,viewHeight);
 
   //onWindowResizeOrt(); //SO por precaução
@@ -123,7 +123,38 @@ function setupMaterialAndLights(){
 
 
   material = setDefaultMaterial(); // create a basic material
-  light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
+
+
+  //Ambient light
+
+  let ambientLight = new THREE.AmbientLight("rgb(255,255,255)",0.2  );
+
+
+  let dirLight =  new THREE.DirectionalLight("rgb(235,235,235)",0.5);
+
+
+  dirLight.shadow.camera.near = -1000;
+  dirLight.shadow.camera.far = 1000;
+  dirLight.shadow.camera.left = -1000;
+  dirLight.shadow.camera.right = 1000;
+  dirLight.shadow.camera.bottom = -1000;
+  dirLight.shadow.camera.top = 1000;
+  dirLight.castShadow = true;
+  dirLight.position.set(100,200,300);
+
+
+  dirLight.target.position.set(-100,-10,-150);
+  dirLight.target.updateMatrixWorld()
+
+  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.mapSize.width = 2048;
+
+
+
+  scene.add(ambientLight);
+  scene.add(dirLight);
+''
+  //light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 }
 
 //Retuns the first point of intersection of a raycast from the camera, directed at the mouse position(normalized), colliding with the BG
@@ -145,6 +176,7 @@ function rayCastPositionOnBG() {
 
 function setupScene(){
   scene = new THREE.Scene();
+  
 }
 
 
@@ -171,9 +203,10 @@ function createBoard(){
       (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
       0));
       scene.add(GAME_BOARD[i][j].getGameObject());
-      scene.add(GAME_BOARD[i][j].getObjectMargin());
+      //scene.add(GAME_BOARD[i][j].getObjectMargin());
       GAME_BOARD[i][j].updateCollider();
-      GAME_BOARD[i][j].getObjectMargin().update();
+      
+      //GAME_BOARD[i][j].getObjectMargin().update();
 
     }
   }
@@ -186,12 +219,13 @@ function createBoard(){
 
 function createBackGround(){
 
-  const planeWidth = 10000;
-  const planeHeight = 10000;
+  const planeWidth = 1000;
+  const planeHeight = 1000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(60,60,180)'));
+  BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
   
-  BG.position.set(0,0,-100)
+  BG.position.set(0,0,-40)
+  BG.receiveShadow = true;
   // Position the plane at the XY plane
   
 
@@ -225,7 +259,7 @@ function checkCollisionBoard(){
         
 
         scene.remove(GAME_BOARD[i][j].getGameObject());
-        scene.remove(GAME_BOARD[i][j].getObjectMargin());
+        //scene.remove(GAME_BOARD[i][j].getObjectMargin());
         GAME_BOARD[i][j].collided = true;
         // GAME_BOARD[i][j] = null;
         return;
@@ -337,7 +371,7 @@ function checkKeyboard(){
         for(let j = 0;j<8;j++){
           if(GAME_BOARD[i][j].collided) {
             scene.add(GAME_BOARD[i][j].getGameObject());
-            scene.add(GAME_BOARD[i][j].getObjectMargin());
+            //scene.add(GAME_BOARD[i][j].getObjectMargin());
             GAME_BOARD[i][j].collided = false;
           }
         }
@@ -369,7 +403,7 @@ function initGame(){
   scene.add(player.getGameObject());
   player.setPosition(new THREE.Vector3(0,-250,0));
 
-  scene.add(player.getDebug())
+  //scene.add(player.getDebug())
 
 
 

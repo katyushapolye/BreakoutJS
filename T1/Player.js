@@ -31,13 +31,13 @@ export class Player{
         let CylinderMesh = new THREE.Mesh(new THREE.CylinderGeometry(50,50,40))
         CylinderMesh.material = new THREE.MeshLambertMaterial({color:'rgb(255,50,50)'})
         CylinderMesh.rotateX(3.1415/2);
-        CylinderMesh.position.set(0,-260,0)
+        CylinderMesh.position.set(0,-260,0) //center of new player//use
 
 
         let CutMesh = new THREE.Mesh(new THREE.BoxGeometry(60,60,50))
         CutMesh.material = new THREE.MeshLambertMaterial({color:'rgb(50,250,50)'})
 
-        this.debug = CylinderMesh   ;
+        this.debug = CylinderMesh;
         
 
 
@@ -47,6 +47,7 @@ export class Player{
             new THREE.MeshLambertMaterial({ color:'rgb(255,50,50)'})));
             this.parent.add(this.blocks[i]);
             this.blocks[i].position.set(-40+(i*20),0,0);
+            this.blocks[i].castShadow = true
 
             //Normals init
 
