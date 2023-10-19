@@ -128,10 +128,10 @@ function setupMaterialAndLights(){
 
   //Ambient light
 
-  let ambientLight = new THREE.AmbientLight("rgb(255,255,255)",0.2  );
+  let ambientLight = new THREE.AmbientLight("rgb(255,255,255)",0.2);
 
 
-  let dirLight =  new THREE.DirectionalLight("rgb(235,235,235)",0.5);
+  let dirLight =  new THREE.DirectionalLight("rgb(235,235,235)",0.6);
 
 
   dirLight.shadow.camera.near = -1000;
@@ -225,7 +225,7 @@ function createBackGround(){
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
   BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
   
-  BG.position.set(0,0,-40)
+  BG.position.set(0,0,-10)
   BG.receiveShadow = true;
   // Position the plane at the XY plane
   
@@ -282,17 +282,42 @@ function checkCollisionBoard(){
 
 function checkCollisionPlayer(){
 
-  let pColliders = player.getColliders();
-  if(ball.getDirection().y >= 0){
+  console.log("Ppos = " + player.getPosition().x + "," + player.getPosition().y)
+  console.log("Bpos = " + ball.getPosition().x + "," + ball.getPosition().y)
+
+  //No need to check if going down or on top of player and if is on the side
+  //Little trig trick here to avoid detection when passed on the offset
+  if(ball.getDirection().y >= 0 || ball.getPosition().y < player.getPosition().y + player.getRadius()+ player.getOffset() ){
     return;
   }
-  for(let i =0;i<5;i++){
-      if(pColliders[i].intersectsBox(ball.getCollider())){
+
+  //Distance
+
+  const playerX = player.getPosition().x;
+  const playerY = player.getPosition().y;
+  const ballX = ball.getPosition().x;
+  const ballY = ball.getPosition().y;
+
+  const dx = ballX - playerX;
+  const dy = ballY - playerY;
+  
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+
+
+  let radiusSum = player.getRadius() + ball.getRadius();
+ 
+  if(radiusSum >= distance){
+    console.log("Collision Detected");
+
+    let normal = new Vector3(dx,dy);
+    normal.normalize();
+
 
         //Minimum angle of reflection here
-        ball.setDirection(calculateReflection(ball.getDirection(),player.getNormals()[i]));
+    ball.setDirection(calculateReflection(ball.getDirection(),normal));
 
-        let minimumVet = ball.getDirection();
+    let minimumVet = ball.getDirection();
 
 
         if(ball.getDirection().y < 0.5){
@@ -311,15 +336,9 @@ function checkCollisionPlayer(){
       ball.setDirection(minimumVet);
 
 
-        //Little cheat for double collision culling
-        //Collision timeout for avoid doublle
-        //ball.setPosition(new Vector3(ball.getPosition().x,ball.getPosition().y+15,0));
+  }
 
-        
 
-        return;
-      }
-  } 
 
 }
 
@@ -342,7 +361,9 @@ function checkCollisionWall(){
 // Check defeat
 function checkDefeat(){
   if(ball.getPosition().y < -500) {
-    ball.setPosition(new THREE.Vector3(0,-0,0));
+    let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5,0);
+    ball.setDirection(new Vector3(0,0,0))
+    ball.setPosition(ballPos);
     isPlayerWithBall = true;
   }
 }
@@ -382,8 +403,11 @@ function checkKeyboard(){
           }
         }
       }
+
+      let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5+8,0);
+
       
-      ball.setPosition(new THREE.Vector3(0,-0,0));
+      ball.setPosition(ballPos);
       isPlayerWithBall = true;
     }
   
@@ -409,7 +433,7 @@ function initGame(){
   scene.add(player.getGameObject());
   player.setPosition(new THREE.Vector3(0,-250,0));
 
-  //scene.add(player.getDebug())
+  scene.add(player.getDebug())
 
 
 
@@ -437,7 +461,7 @@ function gameLoop(){
 
   //Handle input (Raycast to world cords)
   keyboard.update();
-  let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,-250,0);
+  let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,0,0);
 
   if(win < 64) checkKeyboard();
 
@@ -454,7 +478,8 @@ function gameLoop(){
   if(isPlayerWithBall){
 
     //Little offset so it should right above the player
-    let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+20,0);
+    let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5+8,0);
+
     ball.setPosition(ballPos);
   }
 

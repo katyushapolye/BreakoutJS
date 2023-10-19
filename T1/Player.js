@@ -2,22 +2,29 @@
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
+import { CSG } from '../libs/other/CSGMesh.js'        
 
 //Attributes
 
 
 export class Player{
 
-    parent = null; //Gameobject to tie all other blocks
-    normals = [];
-    blocks = [];
+    parent = null; //Gameobject, the position is the center of the CSG object that was cut
 
-    colliders = [];
+    radius = 90;
+    offset = -20;
+    //normals = [];
+    //blocks = [];
+
+    //colliders = [];
 
 
     debug = null;
 
     targetPos = new THREE.Vector3(0,-250,0); //Position to move to
+
+
+
 
 
     constructor(){
@@ -27,20 +34,43 @@ export class Player{
 
         //Create CSG 
 
-        
-        let CylinderMesh = new THREE.Mesh(new THREE.CylinderGeometry(50,50,40))
+        //define player radius
+        let CylinderMesh = new THREE.Mesh(new THREE.CylinderGeometry(this.radius,this.radius,40))
         CylinderMesh.material = new THREE.MeshLambertMaterial({color:'rgb(255,50,50)'})
         CylinderMesh.rotateX(3.1415/2);
-        CylinderMesh.position.set(0,-260,0) //center of new player//use
+        CylinderMesh.position.set(0,0,0) //center of new player//use
 
 
-        let CutMesh = new THREE.Mesh(new THREE.BoxGeometry(60,60,50))
+
+        let CutMesh = new THREE.Mesh(new THREE.BoxGeometry(this.radius*2,this.radius*2,50))
         CutMesh.material = new THREE.MeshLambertMaterial({color:'rgb(50,250,50)'})
+        CutMesh.position.set(0,this.offset,0);
 
-        this.debug = CylinderMesh;
+        CylinderMesh.matrixAutoUpdate = false;
+        CylinderMesh.updateMatrix();
+
+        CutMesh.matrixAutoUpdate = false;
+        CutMesh.updateMatrix();
+        
+
+        let cyCSG = CSG.fromMesh(CylinderMesh);
+        let cutCSG = CSG.fromMesh(CutMesh);
+        let result = cyCSG.subtract(cutCSG);
+        let newMesh = CSG.toMesh(result,new THREE.Matrix4())
+        newMesh.material = new THREE.MeshLambertMaterial({color:'rgb(255,50,50)'});
+        this.debug = newMesh;
+
+
+        this.parent = newMesh;
+
+
+
+
+
         
 
 
+        /*
 
         for(let i = 0;i<5;i++){
             this.blocks.push(new THREE.Mesh(new THREE.BoxGeometry(20,20,40),
@@ -68,6 +98,7 @@ export class Player{
         this.normals[1].normalize();
         this.normals[3].normalize();
         this.normals[4].normalize();
+        */
 
         
         
@@ -89,6 +120,9 @@ export class Player{
         return this.debug;
     }
 
+    getOffset(){
+        return this.offset;
+    }
 
     //Snaps the player to position
     setPosition(newPosition){
@@ -102,7 +136,7 @@ export class Player{
     //sets the targetPosition as newPosition to player go
     move(newPosition){
 
-        this.targetPos =newPosition;
+        this.targetPos.x = newPosition.x;
     }
 
 
@@ -115,20 +149,27 @@ export class Player{
         return this.normals;
     }
 
-    update(){
+    getRadius(){
+        return this.radius;
+    }
 
-        this.parent.position.lerp(this.targetPos,0.2);
+    update(){
+        this.targetPos.y = -250 - this.radius;
+
+        this.parent.position.set(this.targetPos.x,this.targetPos.y,0);
         if(this.parent.position.x>150){
-            this.parent.position.set(150, -250, 0);
+            this.parent.position.set(150, -250 - this.radius, 0);
         }
         if(this.parent.position.x<-150){
-            this.parent.position.set(-150, -250, 0);
+            this.parent.position.set(-150, -250 - this.radius, 0);
         }
         //Update colliders for each box
-
+        /*
         for(let i = 0;i<5;i++){
             this.colliders[i].setFromObject(this.blocks[i],true);
         }
+        */
+
 
 
         return;
