@@ -38,6 +38,7 @@ const WORLD_W = 400;
 let ball = null;
 let player = null;
 let BG = null;
+let bg4Ray= null;
 let retPosition;
 let ballPos;
 let GAME_BOARD = Array(8).fill().map(() => Array(8).fill(0)); //EU não sei o que é isso
@@ -59,7 +60,7 @@ let intersections;
 
 
 function onWindowResizeOrt() {
-  /*
+  
   console.log("Resizing Camera");
   const newWidth = window.innerWidth;
   const newHeight = window.innerHeight;
@@ -83,7 +84,7 @@ function onWindowResizeOrt() {
 
   renderer.setSize(newWidth, newHeight);
   renderer.setViewport(offsetX, offsetY, targetWidth, targetHeight);
-  */
+  
 }
 
 //Calcula pos do mouse na tela em cords normalizada
@@ -115,7 +116,7 @@ function setupRenderAndCamera(){
     renderer = initRenderer();    // Init a basic renderer, alreaday has a shadowmap
     renderer.setSize(viewWidth,viewHeight);
 
-  //onWindowResizeOrt(); //SO por precaução
+  onWindowResizeOrt(); //SO por precaução
 
 }
 
@@ -228,8 +229,13 @@ function createBackGround(){
   BG.receiveShadow = true;
   // Position the plane at the XY plane
   
-
   scene.add(BG);
+  const specialMat= setDefaultMaterial('rgb(60,60,180)');
+  specialMat.transparent=true;
+  specialMat.opacity=0
+  bg4Ray= new THREE.Mesh(planeGeometry, specialMat);
+  bg4Ray.position.set(0,0,0);
+  scene.add(bg4Ray);
 
 
 }
