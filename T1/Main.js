@@ -41,7 +41,7 @@ let BG = null;
 let bg4Ray= null;
 let retPosition;
 let ballPos;
-let GAME_BOARD = Array(8).fill().map(() => Array(8).fill(0)); //EU não sei o que é isso
+let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
 
 //Game control defs
 
@@ -49,6 +49,10 @@ let isPlayerWithBall = true
 let isFullScreen = false
 let simulationOn = true
 let win = 0;
+let CURRENT_LEVEL = 0;
+
+let GAME_BOARD_HEIGHT = 8;
+let GAME_BOARD_WIDTH = 8;
 
 //Raycast defs
 
@@ -144,7 +148,7 @@ function setupMaterialAndLights(){
   dirLight.position.set(100,200,300);
 
 
-  dirLight.target.position.set(-100,-10,-150);
+  dirLight.target.position.set(-100,0 ,-0);
   dirLight.target.updateMatrixWorld()
 
   dirLight.shadow.mapSize.height = 2048;
@@ -181,35 +185,158 @@ function setupScene(){
 }
 
 
-function createBoard(){
+function createBoard(level =  1){
 
   //Mexer aqui para criar tabuleiros foda, ajustar valores max de 8 e 16 baseado no tamanho do bloco
 
   //Cores legais
 
+  if(level == 1){
+
   let cores = [];
 
-  cores.push("rgb(255,100,100)"); //red
-  cores.push("rgb(100,255,100)"); //green
-  cores.push("rgb(100,100,255)") //blue
-  cores.push("rgb(255,255,100)"); //yellow
-  cores.push("rgb(255,100,255)"); //purple
 
-  for(let i = 0;i<8;i++){
-    for(let j = 0;j<8;j++){
 
-      let colorIndex =  i%(cores.length);
+  //let grey = "rgb(128,128,128)" //grey;
+  //cores.push(grey);
+
+
+  cores.push("rgb(30,255,30)"); //green
+  //cores.push("rgb(255,255,100)"); //yellow
+  cores.push("rgb(255,8,127)"); //pink
+  cores.push("rgb(255,180,0)") //organge;
+  cores.push("rgb(30,30,255)") //blue
+  cores.push("rgb(255,30,30)"); //red
+
+  let grey = "rgb(160,160,160)" //grey;
+  cores.push(grey);
+  let GAME_BOARD_HEIGHT = 6;
+  let GAME_BOARD_WIDTH = 11;
+  
+
+  for(let i = 0;i<GAME_BOARD_HEIGHT;i++){
+    for(let j = 0;j<GAME_BOARD_WIDTH;j++){
+
+      let colorIndex =  i;
       GAME_BOARD[i][j] = new Block.Block(cores[colorIndex]);
-      GAME_BOARD[i][j].setPosition(new THREE.Vector3((j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 ,
+      GAME_BOARD[i][j].setPosition(new THREE.Vector3((20+j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 ,
       (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
       0));
       scene.add(GAME_BOARD[i][j].getGameObject());
-      //scene.add(GAME_BOARD[i][j].getObjectMargin());
+      scene.add(GAME_BOARD[i][j].getObjectMargin());
       GAME_BOARD[i][j].updateCollider();
       
-      //GAME_BOARD[i][j].getObjectMargin().update();
+      GAME_BOARD[i][j].getObjectMargin().update();
 
     }
+  }
+}
+  
+
+  
+
+  if(level == 2){
+    console.log("Level 2");
+
+
+      let cores = [];
+    
+    
+    
+      //let grey = "rgb(128,128,128)" //grey;
+      //cores.push(grey);
+    
+    
+      cores.push("rgb(30,255,30)"); //green
+      //cores.push("rgb(255,255,100)"); //yellow
+      cores.push("rgb(255,30,255)"); //pink
+      cores.push("rgb(255,180,0)") //organge;
+      cores.push("rgb(30,30,255)") //blue
+      cores.push("rgb(255,30,30)"); //red
+    
+      let grey = "rgb(160,160,160)" //grey;
+      cores.push(grey);
+      let GAME_BOARD_HEIGHT = 14;
+      let GAME_BOARD_WIDTH = 9;
+      
+    
+      for(let i = 0;i<GAME_BOARD_HEIGHT;i++){
+        for(let j = 0;j<GAME_BOARD_WIDTH;j++){
+          if(j == 4){
+            continue;
+          }
+    
+          GAME_BOARD[i][j] = new Block.Block("rgb(160,160,160)");
+          GAME_BOARD[i][j].setPosition(new THREE.Vector3(( 70 + -GAME_BOARD[i][j].getWidth()/2+ j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 ,
+          -120 + (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
+          0));
+          scene.add(GAME_BOARD[i][j].getGameObject());
+          scene.add(GAME_BOARD[i][j].getObjectMargin());
+          GAME_BOARD[i][j].updateCollider();
+          GAME_BOARD[i][j].getObjectMargin().update();
+          GAME_BOARD[i][j].setHealth(2);
+
+          //Setting up the crazy color pallet and block health
+
+          //green diag
+          if(i == j-1 || i == j+3 || i == j+7  || i == j+11 || i == j-5){
+            GAME_BOARD[i][j].setColor(cores[0]);
+            GAME_BOARD[i][j].setHealth(1);
+          }
+          //red diag
+          if(i == j+1 || i == j + 9 || i == j-7){
+            GAME_BOARD[i][j].setColor(cores[4]);
+            GAME_BOARD[i][j].setHealth(1);
+          }
+
+          //pink then orange diag
+          if(j == i || j == i-8 || j == i-4 || j == i+8){
+            if(j%2 == 0){
+            GAME_BOARD[i][j].setColor(cores[1]);
+            GAME_BOARD[i][j].setHealth(1);
+            }
+            else{
+              GAME_BOARD[i][j].setColor(cores[2]);
+              GAME_BOARD[i][j].setHealth(1);
+
+
+            }
+          }
+
+          //orange than pink diag
+          if(j == i-2 || j == i-6 || j==i-2|| j == i+2 || j == i-10 || j == i+6){
+            if(j%2 == 0){
+            GAME_BOARD[i][j].setColor(cores[2]);
+            GAME_BOARD[i][j].setHealth(1);
+            }
+            else{
+              GAME_BOARD[i][j].setColor(cores[1]);
+              GAME_BOARD[i][j].setHealth(1);
+
+
+            }
+          }
+
+          //blue than orange diag
+          if(j == i-4 || j == i-12 || j == i+4){
+            if(j%2 == 0){
+            GAME_BOARD[i][j].setColor(cores[3]);
+            GAME_BOARD[i][j].setHealth(1);
+            }
+            else{
+              GAME_BOARD[i][j].setColor(cores[2]);
+              GAME_BOARD[i][j].setHealth(1);
+
+
+            }
+          }
+    
+        }
+      }
+
+
+
+
   }
 
 
@@ -243,13 +370,19 @@ function createBackGround(){
 function checkCollisionBoard(){
   win = 0; 
 
-  for(let i = 0;i<8;i++){
-    for(let j = 0;j<8;j++){
+  for(let i = 0;i<16;i++){
+    for(let j = 0;j<16;j++){
+      if(GAME_BOARD[i][j] == null){
+        continue;
+      }
       if(GAME_BOARD[i][j].collided){
         win = win + 1
         continue;
       }
-
+      if(GAME_BOARD[i][j] == null){
+        continue;
+      }
+      try{
       let blockCol = GAME_BOARD[i][j].getCollider();
       let ballCol = ball.getCollider();
 
@@ -265,12 +398,17 @@ function checkCollisionBoard(){
         
 
         scene.remove(GAME_BOARD[i][j].getGameObject());
-        //scene.remove(GAME_BOARD[i][j].getObjectMargin());
+        scene.remove(GAME_BOARD[i][j].getObjectMargin());
         GAME_BOARD[i][j].collided = true;
-        // GAME_BOARD[i][j] = null;
+        GAME_BOARD[i][j] = null;
         return;
 
       }
+    }
+    catch{
+      //catched
+      return;
+    }
     }
   }
 
@@ -282,8 +420,8 @@ function checkCollisionBoard(){
 
 function checkCollisionPlayer(){
 
-  console.log("Ppos = " + player.getPosition().x + "," + player.getPosition().y)
-  console.log("Bpos = " + ball.getPosition().x + "," + ball.getPosition().y)
+  //console.log("Ppos = " + player.getPosition().x + "," + player.getPosition().y)
+  //console.log("Bpos = " + ball.getPosition().x + "," + ball.getPosition().y)
 
   //No need to check if going down or on top of player and if is on the side
   //Little trig trick here to avoid detection when passed on the offset
@@ -392,23 +530,8 @@ function checkKeyboard(){
 
   if(simulationOn) {
     if ( keyboard.down("R") ){
-      win = 0;
-
-      for(let i = 0;i<8;i++){
-        for(let j = 0;j<8;j++){
-          if(GAME_BOARD[i][j].collided) {
-            scene.add(GAME_BOARD[i][j].getGameObject());
-            //scene.add(GAME_BOARD[i][j].getObjectMargin());
-            GAME_BOARD[i][j].collided = false;
-          }
-        }
-      }
-
-      let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5+8,0);
-
-      
-      ball.setPosition(ballPos);
-      isPlayerWithBall = true;
+      resetGame();
+      createBoard(CURRENT_LEVEL%2 + 1)
     }
   
     if ( keyboard.down("enter") ){
@@ -416,7 +539,36 @@ function checkKeyboard(){
       switchFullScreen(isFullScreen);
     }
   }
+
+  if(keyboard.down("G")){
+    resetGame();
+    CURRENT_LEVEL = (CURRENT_LEVEL%2) + 1;
+    createBoard((CURRENT_LEVEL%2 )+ 1);
+  }
   
+}
+
+function resetGame(){
+
+  for(let i = 0;i<16;i++){
+    for(let j = 0;j<16;j++){
+      if(GAME_BOARD[i][j] != null){
+      scene.remove(GAME_BOARD[i][j].getGameObject())
+      scene.remove(GAME_BOARD[i][j].getObjectMargin())
+      }
+      
+    }
+  }
+
+  //resetting player
+  player.setPosition(new THREE.Vector3(0,-250,0));
+  ball.setPosition(new THREE.Vector3(0,-0,0));
+  isPlayerWithBall = true;
+  win = 0;
+  
+
+
+
 }
 
 //Init function
@@ -440,7 +592,7 @@ function initGame(){
 
   //Init board
 
-  createBoard();
+  createBoard(1);
   createBackGround();
 
   //Init ball

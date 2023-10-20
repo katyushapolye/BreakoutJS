@@ -1,12 +1,36 @@
-
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
-import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
+import {initRenderer, 
+        initCamera,
+        initDefaultBasicLight,
+        setDefaultMaterial,
+        InfoBox,
+        onWindowResize,
+        createGroundPlaneXZ} from "../libs/util/util.js";
+
+let scene, renderer, camera, material, light, orbit;; // Initial variables
+scene = new THREE.Scene();    // Create main scene
+renderer = initRenderer();    // Init a basic renderer
+camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
+material = setDefaultMaterial(); // create a basic material
+light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
+orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
+
+// Listen window size changes
+window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
+
+// Show axes (parameter is size of each axis)
+
+
+
+
+
 import { CSG } from '../libs/other/CSGMesh.js'        
+import { Vector3 } from '../build/three.module.js';
 
-//Attributes
 
 
+//Classe usada no jogo
 export class Player{
 
     parent = null; //Gameobject, the position is the center of the CSG object that was cut
@@ -58,6 +82,9 @@ export class Player{
         let result = cyCSG.subtract(cutCSG);
         let newMesh = CSG.toMesh(result,new THREE.Matrix4())
         newMesh.material = new THREE.MeshLambertMaterial({color:'rgb(255,50,50)'});
+        this.debug = newMesh;
+
+
         this.parent = newMesh;
 
 
@@ -174,4 +201,30 @@ export class Player{
 
 
 
+}
+
+
+
+
+// Use this to show information onscreen
+let controls = new InfoBox();
+  controls.add("Basic Scene");
+  controls.addParagraph();
+  controls.add("Use mouse to interact:");
+  controls.add("* Left button to rotate");
+  controls.add("* Right button to translate (pan)");
+  controls.add("* Scroll to zoom in/out.");
+  controls.show();
+
+
+
+  
+let player = new Player();
+scene.add(player.getGameObject());
+player.setPosition(new Vector3(0,-90,0)) // player position é o centro do cilindro
+render();
+function render()
+{
+  requestAnimationFrame(render);
+  renderer.render(scene, camera) // Render scene
 }

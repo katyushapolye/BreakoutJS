@@ -11,12 +11,15 @@ export class Block{
     collided = false;
 
     BLOCK_H = 15;
-    BLOCK_W = 50;
+    BLOCK_W = 33;
+
+
+    health = 1; //number of hits to destroy
 
     
 
     //Talvez seja legal passar a cor como parametro do construtor
-    constructor(color = null){
+    constructor(color = null,health = 1){
         console.log("Block created ")
         let colorRand = color;
         if(color == null){
@@ -37,8 +40,9 @@ export class Block{
 
         this.Body.geometry.computeBoundingBox();
         this.collider.copy(this.Body.geometry.boundingBox);
+        this.health = health;
 
-        //this.margin = new THREE.BoxHelper(this.Body, 0x00000)
+        this.margin = new THREE.BoxHelper(this.Body, 0x00000)
     }
 
     getHeight(){
@@ -50,6 +54,23 @@ export class Block{
 
     setColor(color){
             this.Body.material.color = new THREE.Color(color);
+    }
+    getColor(){
+        return this.color;
+    }
+
+    decreaseHealth(){
+        if(this.health != 0){
+            this.health--;
+        }
+    }
+
+    getHealth(){
+        return this.health;
+    }
+
+    setHealth(newHealth){
+        this.health = newHealth;
     }
 
     //returns the collidr;
