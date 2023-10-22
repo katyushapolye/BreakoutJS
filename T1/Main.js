@@ -10,9 +10,9 @@ import KeyboardState from '../libs/util/KeyboardState.js'
 //Imports of our classes, dont know why it needs the whole dir
 
 
-import * as Player from "../T1/Player.js";
+import * as Player from "./Player.js";
 import * as Block from './Block.js'
-import * as Ball from '../T1/Ball.js';
+import * as Ball from './Ball.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
 import { calculateReflection, checkFaceColision, switchFullScreen } from './Utils.js';
@@ -36,12 +36,14 @@ var keyboard = new KeyboardState();
 const WORLD_H = 800;
 const WORLD_W = 400;
 let ball = null;
+let powerupball = null;
 let player = null;
 let BG = null;
 let bg4Ray= null;
 let retPosition;
 let ballPos;
 let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
+let DELTA_TIME = 1/60; //Assuming the game runs at 60fps at all times 
 
 //Game control defs
 
@@ -49,10 +51,19 @@ let isPlayerWithBall = true
 let isFullScreen = false
 let simulationOn = true
 let win = 0;
+
+let POINTS = 0;
+
+let powerupcount = 0;
+let powerupcooldown = false;
+let poweruptimer = 0;
 let CURRENT_LEVEL = 0;
 
 let GAME_BOARD_HEIGHT = 8;
 let GAME_BOARD_WIDTH = 8;
+
+let SPEED_CLOCK = 0;
+
 
 //Raycast defs
 
@@ -145,10 +156,10 @@ function setupMaterialAndLights(){
   dirLight.shadow.camera.bottom = -1000;
   dirLight.shadow.camera.top = 1000;
   dirLight.castShadow = true;
-  dirLight.position.set(100,200,300);
+  dirLight.position.set(100,200,500);
 
 
-  dirLight.target.position.set(-100,0 ,-0);
+  dirLight.target.position.set(-100,-100,0);
   dirLight.target.updateMatrixWorld()
 
   dirLight.shadow.mapSize.height = 2048;
@@ -379,9 +390,6 @@ function checkCollisionBoard(){
         win = win + 1
         continue;
       }
-      if(GAME_BOARD[i][j] == null){
-        continue;
-      }
       try{
       let blockCol = GAME_BOARD[i][j].getCollider();
       let ballCol = ball.getCollider();
@@ -401,6 +409,10 @@ function checkCollisionBoard(){
         scene.remove(GAME_BOARD[i][j].getObjectMargin());
         GAME_BOARD[i][j].collided = true;
         GAME_BOARD[i][j] = null;
+        POINTS++;
+        powerupcount++;
+        
+
         return;
 
       }
@@ -410,12 +422,57 @@ function checkCollisionBoard(){
       return;
     }
     }
+
+
+
+
+    
   }
 
   // se todos estiverem colididos
-  if(win >= 64) {
-    simulationOn = false;
+  if(POINTS >= 66) {
+    simulationOn = false; //set flag to next level
+    CURRENT_LEVEL+=1;
+    resetGame();
+    createBoard(2);
+    simulationOn = true;
+    POINTS = 0;
   }
+
+
+  
+  if(powerupcount>= 10){
+    console.log("Powerup achieved");
+    powerUp();
+    powerupcount = 0;
+    
+  }
+}
+
+function powerUp(){
+
+  if(powerupball != null){
+
+    powerupcount=0;
+    return;
+  }
+
+  if(powerupcooldown){
+    console.log("Power up still on cooldown: " + poweruptimer);
+
+    powerupcount = 0;
+    return;
+  }
+  
+  powerupball = new Ball.Ball();
+  powerupball.setPosition(ball.getPosition());
+  powerupball.setDirection(new Vector3(-ball.getDirection().x,ball.getDirection().y));
+  scene.add(powerupball.getGameObject());
+  poweruptimer = 10;
+
+
+  
+
 }
 
 function checkCollisionPlayer(){
@@ -425,9 +482,9 @@ function checkCollisionPlayer(){
 
   //No need to check if going down or on top of player and if is on the side
   //Little trig trick here to avoid detection when passed on the offset
-  if(ball.getDirection().y >= 0 || ball.getPosition().y < player.getPosition().y + player.getRadius()+ player.getOffset() ){
-    return;
-  }
+  if( !(ball.getDirection().y >= 0 || ball.getPosition().y < player.getPosition().y + player.getRadius()+ player.getOffset()) ){
+    
+  
 
   //Distance
 
@@ -475,6 +532,67 @@ function checkCollisionPlayer(){
 
 
   }
+}
+
+  if(powerupball != null){
+
+
+
+    if(powerupball.getDirection().y >= 0 || powerupball.getPosition().y < player.getPosition().y + player.getRadius()+ player.getOffset() ){
+      return;
+    }
+  
+    //Distance
+  
+    const playerX = player.getPosition().x;
+    const playerY = player.getPosition().y;
+    const ballX = powerupball.getPosition().x;
+    const ballY = powerupball.getPosition().y;
+  
+    const dx = ballX - playerX;
+    const dy = ballY - playerY;
+    
+    const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  
+  
+    let radiusSum = player.getRadius() + powerupball.getRadius();
+   
+    if(radiusSum >= distance){
+      console.log("Collision Detected");
+  
+      let normal = new Vector3(dx,dy);
+      normal.normalize();
+  
+  
+          //Minimum angle of reflection here
+      powerupball.setDirection(calculateReflection(powerupball.getDirection(),normal));
+  
+      let minimumVet = powerupball.getDirection();
+  
+  
+          if(powerupball.getDirection().y < 0.5){
+            minimumVet.y = 0.5;
+            if(powerupball.getDirection().x < (-Math.sqrt(3)/2)){
+              minimumVet.x =  -(Math.sqrt(3)/2);
+            }
+  
+            if(powerupball.getDirection().x > Math.sqrt(3)/2){
+              minimumVet.x =  Math.sqrt(3)/2;
+  
+  
+          };
+        }
+        minimumVet.normalize();
+        powerupball.setDirection(minimumVet);
+  
+  
+    }
+  }
+
+  //same thing but for extra ball
+
+
 
 
 
@@ -494,6 +612,26 @@ function checkCollisionWall(){
     ball.setDirection(calculateReflection(ball.getDirection(),new THREE.Vector3(0,-1,0)));
 
   }
+
+  if(powerupball!= null){
+
+    if(powerupball.getPosition().x > (WORLD_W/2)){
+      powerupball.setDirection(calculateReflection(powerupball.getDirection(),new THREE.Vector3(-1,0,0)));
+      
+    }
+    if(powerupball.getPosition().x < -(WORLD_W/2)){
+      powerupball.setDirection(calculateReflection(powerupball.getDirection(),new THREE.Vector3(1,0,0)));
+    }
+  
+    if(powerupball.getPosition().y > (WORLD_H/2)){
+      powerupball.setDirection(calculateReflection(powerupball.getDirection(),new THREE.Vector3(0,-1,0)));
+  
+    }
+
+
+
+
+  }
 }
 
 // Check defeat
@@ -503,6 +641,9 @@ function checkDefeat(){
     ball.setDirection(new Vector3(0,0,0))
     ball.setPosition(ballPos);
     isPlayerWithBall = true;
+
+    //Resting speed
+    ball.resetSpeed();
   }
 }
 
@@ -564,6 +705,19 @@ function resetGame(){
   player.setPosition(new THREE.Vector3(0,-250,0));
   ball.setPosition(new THREE.Vector3(0,-0,0));
   isPlayerWithBall = true;
+
+  if(powerupball != null){
+
+    scene.remove(powerupball.getGameObject());
+  } 
+
+  powerupcount = 0;
+  poweruptimer = 0;
+  powerupball = null;
+  powerupcooldown = false;
+
+
+  ball.resetSpeed();
   win = 0;
   
 
@@ -620,10 +774,7 @@ function gameLoop(){
 
   //Process Game logic (Check colision/Reflection,Check death and collision culling,move player to target position)
   
-  if(simulationOn) {
-    player.move(pTarget);
-    player.update();
-  }
+ 
   
 
 
@@ -633,16 +784,63 @@ function gameLoop(){
     let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5+8,0);
 
     ball.setPosition(ballPos);
+    ball.resetSpeed();
+    SPEED_CLOCK = 0;
   }
 
   if(simulationOn) {
+    player.move(pTarget);
+    player.update();
+
+    //Ball speed increase
+    SPEED_CLOCK+= DELTA_TIME;
+    if(SPEED_CLOCK > 10){
+      console.log("Increasing ball speed...");
+      ball.increaseSpeed(2);
+      SPEED_CLOCK = 0;
+    }
+
     ball.update();
+
+    //Checking for double ball powerup, define the lenght on the powerup function
+    if(powerupball != null){
+      console.log("Updating power up");
+      powerupball.update();
+      poweruptimer -= DELTA_TIME;
+    }
+  
+
+    if(poweruptimer <=0 && powerupball != null){
+      scene.remove(powerupball.getGameObject());
+      powerupball = null;
+      powerupcooldown = true;
+      poweruptimer = 10 ; //cooldown for new powerup
+      console.log("Removing powerup")
+      
+
+    }
+
+    if(powerupcooldown && powerupball==null){
+      poweruptimer -=DELTA_TIME;
+      if(poweruptimer <= 0){
+        powerupcooldown = false;
+        poweruptimer = 0;
+
+      }
+
+    }
+
+    //Cooldown for new powerup
+
+
   }
   
   checkCollisionBoard();
   checkCollisionWall();
   checkCollisionPlayer();
   checkDefeat();
+
+  console.log("Score: " + POINTS);
 
 
 

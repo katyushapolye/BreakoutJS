@@ -4,7 +4,7 @@ export class Ball{
     DirectionVet =  new THREE.Vector3(0,0,0);
 
     speed = 5.0;
-    radius = 8.0;
+    radius =8.0;
 
     Body = null
     collider = null;
@@ -12,7 +12,7 @@ export class Ball{
     constructor(){
 
         this.Body = new THREE.Mesh(new THREE.CircleGeometry(this.radius,64),
-        new THREE.MeshPhongMaterial({color:'rgb(0,0,0)',shininess:"10",specular:"rgb(255,255,255)"}))
+        new THREE.MeshPhongMaterial({color:'rgb(0,0,0)',shininess:"250",specular:"rgb(255,255,255)"}))
         this.collider = new THREE.Box3();
         this.Body.geometry.computeBoundingBox();
         this.collider.copy(this.Body.geometry.boundingBox);
@@ -34,13 +34,20 @@ export class Ball{
 
     setDirection(newDir){
         this.DirectionVet = newDir;
-    }
+    }   
     getDirection(){
         return this.DirectionVet;
     }
 
     getRadius(){
         return this.radius;
+    }
+
+    increaseSpeed(amount){
+        this.speed += amount;
+    }
+    resetSpeed(){
+        this.speed = 5.0;
     }
 
     //Return the collider
