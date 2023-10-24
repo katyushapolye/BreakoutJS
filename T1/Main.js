@@ -437,7 +437,6 @@ function checkCollisionBoard(){
       if(ballCol.intersectsBox(blockCol)){
         GAME_BOARD[i][j].setHealth((GAME_BOARD[i][j].getHealth() - 1 ))
 
-        
         colPoint= calculateCollisionPoint(ballPos, retPosition);
         testeSphere.position.set(colPoint.x, colPoint.y, 0);
         scene.add(testeSphere)
@@ -461,7 +460,6 @@ function checkCollisionBoard(){
           scene.add(POWER_UP_OBJECT.getGameObject());
           powerupcount = 0;
 
-
           }
           GAME_BOARD[i][j].collided = true;
           GAME_BOARD[i][j] = null;
@@ -473,11 +471,9 @@ function checkCollisionBoard(){
 
           //BLOCK COLOR LOGIC
           
-          //GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+          GAME_BOARD[i][j].setColor("rgb(80,80,80)");
 
         }
-
-        return;
       }
       if(powerupball != null){
         powerupballCol = powerupball.getCollider();
@@ -491,7 +487,7 @@ function checkCollisionBoard(){
           blockNormal4Power= checkFaceCollision(newColPoint, retPosition);
           powerupball.setDirection(calculateReflection(powerupball.getDirection(), blockNormal4Power))
           //end
-        }
+        
         if(GAME_BOARD[i][j].getHealth()==0){
 
           scene.remove(GAME_BOARD[i][j].getGameObject());
@@ -513,13 +509,14 @@ function checkCollisionBoard(){
           POINTS++;
 
 
-          
         }
+        
         
         else{
           //BLOCK COLOR LOGIC
-          //GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+          GAME_BOARD[i][j].setColor("rgb(80,80,80)");
 
+        }
         }
       }
       }
