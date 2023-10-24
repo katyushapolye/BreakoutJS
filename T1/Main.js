@@ -15,7 +15,7 @@ import * as Block from './Block.js'
 import * as Ball from './Ball.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
-import { calculateReflection, checkFaceColision, switchFullScreen } from './Utils.js';
+import { calculateReflection, checkFaceCollision, switchFullScreen } from './Utils.js';
 
 
 //Input defs
@@ -72,6 +72,9 @@ const rayDir = new THREE.Vector3(0, 0, -1);
 const raycast = new THREE.Raycaster();
 let intersections;
 
+let intersectionSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(8, 30, 30, 0, Math.PI * 2, 0, Math.PI),
+  new THREE.MeshPhongMaterial({color:"orange", shininess:"200"}));
 
 
 function onWindowResizeOrt() {
@@ -106,8 +109,9 @@ function onWindowResizeOrt() {
 function onPointerMove( event ) {
 
 
-	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	pointer.x =  (event.clientX / window.innerWidth) * 2 - 1;
+
+  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
 
 }
@@ -122,6 +126,7 @@ function setupRenderAndCamera(){
 
     window.addEventListener( 'resize', onWindowResizeOrt, false );
     window.addEventListener('pointermove',onPointerMove);
+    
   
     camera.position.set(0, 0, 1000);
     camera.lookAt(new THREE.Vector3(0,0,0));
@@ -165,8 +170,7 @@ function setupMaterialAndLights(){
   dirLight.shadow.mapSize.height = 2048;
   dirLight.shadow.mapSize.width = 2048;
 
-
-
+  scene.add(intersectionSphere);
   scene.add(ambientLight);
   scene.add(dirLight);
 ''
@@ -177,13 +181,22 @@ function setupMaterialAndLights(){
 // Returns the first point of intersection of a raycast from the camera, directed at the mouse position (normalized),
 // colliding with the BG
 function rayCastPositionOnBG() {
-  rayOrigin.set(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
-  raycast.set(rayOrigin, rayDir);
-  intersections = raycast.intersectObjects([BG], false);
+  
+  intersectionSphere.visible = false;
+  //let ray= new THREE.Vector2(pointer.x * window.innerWidth, pointer.y * window.innerHeight)
+  // rayOrigin.set(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
+  // raycast.set(rayOrigin, rayDir);
+  console.log("Starting Raycast debug")
+  raycast.setFromCamera(pointer, camera)
+  intersections = raycast.intersectObjects([bg4Ray], false);
 
   if (intersections.length > 0) {
     //console.log(intersections[0].point)
-    return intersections[0].point;
+    let point = intersections[0].point;
+    intersectionSphere.visible = true;
+    intersectionSphere.position.set(point.x*(innerWidth/380), point.y, point.z);
+    point.x= point.x*(innerWidth/380);
+    return point;
   } else {
     return new THREE.Vector3(0, 0, 0); // Return a default point when there are no intersections.
   }
@@ -192,6 +205,7 @@ function rayCastPositionOnBG() {
 
 function setupScene(){
   scene = new THREE.Scene();
+  
   
 }
 
@@ -358,8 +372,8 @@ function createBoard(level =  1){
 
 function createBackGround(){
 
-  const planeWidth = 1000;
-  const planeHeight = 1000;
+  const planeWidth = 10000;
+  const planeHeight = 10000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
   BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
   
@@ -393,15 +407,16 @@ function checkCollisionBoard(){
       try{
       let blockCol = GAME_BOARD[i][j].getCollider();
       let ballCol = ball.getCollider();
-
+      let colPoint= null;
       let blockNormal = null; //new THREE.Vector3(0,-1,0); // need to change if it is a side collision or down ou, you know
-
+      retPosition = GAME_BOARD[i][j].getPosition();
+      ballPos= ball.getPosition();
       if(ballCol.intersectsBox(blockCol)){
-
-        retPosition = GAME_BOARD[i][j].getPosition();
-        ballPos= ball.getPosition();
         
-        blockNormal= checkFaceColision(retPosition, ballPos);
+        //colPoint= calculateCollisionPoint(ballPos, retPosition);
+        //console.log("Colision Point")
+        //console.log(colPoint)
+        blockNormal= checkFaceCollision(ballPos, retPosition);
         ball.setDirection(calculateReflection(ball.getDirection(),blockNormal))
         
 
@@ -796,7 +811,7 @@ function gameLoop(){
     SPEED_CLOCK+= DELTA_TIME;
     if(SPEED_CLOCK > 10){
       console.log("Increasing ball speed...");
-      ball.increaseSpeed(2);
+      //ball.increaseSpeed(2);
       SPEED_CLOCK = 0;
     }
 

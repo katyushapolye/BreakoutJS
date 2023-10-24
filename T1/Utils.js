@@ -20,28 +20,29 @@ function calculateReflection(direction, normal) {
     return ray
 }
 
-function checkFaceColision(retPosition, ballPos){
-    let blockNormal = null;
-    if(ballPos.y<(retPosition.y-7.5)){
-      return blockNormal = new THREE.Vector3(0,-1,0);
-      
-    
-    }
-    if(ballPos.x<(retPosition.x-25) && ballPos.y<=(retPosition.y+7.5) && ballPos.y>=(retPosition.y-7.5)){
-      return blockNormal = new THREE.Vector3(-1,0,0);
-      
-    }
-    if(ballPos.x>(retPosition.x+25) && ballPos.y<=(retPosition.y+7.5) && ballPos.y>=(retPosition.y-7.5)){
-      return blockNormal = new THREE.Vector3(1,0,0);
-      
-    }
-    if(ballPos.y>(retPosition.y+7.5)){
-      return blockNormal = new THREE.Vector3(0,1,0);
-      
-    }
 
-    
 
+
+
+function checkFaceCollision(colisionPoint, retPosition) {
+  console.log("firstFlag");
+  let halfWidth = 33/2;
+  let halfHeight = 7.5;
+  if (colisionPoint.y >= (retPosition.y + halfHeight)) {
+    return new THREE.Vector3(0, 1, 0); 
+  }
+  if (colisionPoint.y <= (retPosition.y - halfHeight)) {
+    return new THREE.Vector3(0, -1, 0);
+  }
+  if (colisionPoint.x <= (retPosition.x - halfWidth)) {
+    return new THREE.Vector3(-1, 0, 0); 
+  }
+  if (colisionPoint.x >= (retPosition.x + halfWidth)) {
+    return new THREE.Vector3(1, 0, 0); 
+  }
+   else {
+    console.log("ERRO");
+  }
 }
 
 
@@ -64,4 +65,4 @@ function switchFullScreen(isFullScreen) {
 }
 
 
-export{calculateReflection, checkFaceColision, switchFullScreen }
+export{calculateReflection, checkFaceCollision, switchFullScreen }

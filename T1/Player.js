@@ -152,7 +152,7 @@ export class Player{
 
     update(){
         this.targetPos.y = -250 - this.radius;
-
+        
         this.parent.position.set(this.targetPos.x,this.targetPos.y,0);
         if(this.parent.position.x>150){
             this.parent.position.set(150, -250 - this.radius, 0);
