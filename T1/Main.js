@@ -12,7 +12,8 @@ import KeyboardState from '../libs/util/KeyboardState.js'
 
 import * as Player from "./Player.js";
 import * as Block from './Block.js'
-import * as Ball from './Ball.js';
+import * as Ball from './Ball.js';  
+import * as PowerUp from './PowerUp.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
 import { calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint, isCircleAABBCollision} from './Utils.js';
@@ -54,6 +55,8 @@ let newColPoint= null;
 let levelPoints= [66, 112];
 let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
 let DELTA_TIME = 1/60; //Assuming the game runs at 60fps at all times 
+
+let POWER_UP_OBJECT = null;
 
 //Game control defs
 
@@ -267,6 +270,7 @@ function createBoard(level =  1){
     for(let j = 0;j<GAME_BOARD_WIDTH;j++){
 
       let colorIndex =  i;
+
       GAME_BOARD[i][j] = new Block.Block(cores[colorIndex]);
       GAME_BOARD[i][j].setPosition(new THREE.Vector3((20+j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 ,
       (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
@@ -276,6 +280,10 @@ function createBoard(level =  1){
       GAME_BOARD[i][j].updateCollider();
       
       GAME_BOARD[i][j].getObjectMargin().update();
+
+      if(i == 5){
+        GAME_BOARD[i][j].setHealth(2);
+      }
 
     }
   }
@@ -442,17 +450,30 @@ function checkCollisionBoard(){
         if(GAME_BOARD[i][j].getHealth()==0){
           scene.remove(GAME_BOARD[i][j].getGameObject());
           scene.remove(GAME_BOARD[i][j].getObjectMargin());
+          if(powerupball == null && POWER_UP_OBJECT == null){
+            powerupcount++;
+          }
+          //Power up creating
+          if(powerupcount >= 10 && powerupball == null && POWER_UP_OBJECT == null){
+
+          console.log("Power Up Instantiated");
+          POWER_UP_OBJECT = new PowerUp.PowerUpObject(GAME_BOARD[i][j].getPosition());
+          scene.add(POWER_UP_OBJECT.getGameObject());
+          powerupcount = 0;
+
+
+          }
           GAME_BOARD[i][j].collided = true;
           GAME_BOARD[i][j] = null;
           POINTS++;
-          powerupcount++;
+
         }
         
         else{
 
           //BLOCK COLOR LOGIC
-          let mat= new THREE.MeshLambertMaterial('rgb(60,60,180)')
-          GAME_BOARD[i][j].changeMaterial(mat)
+          
+          //GAME_BOARD[i][j].setColor("rgb(80,80,80)");
 
         }
 
@@ -472,16 +493,33 @@ function checkCollisionBoard(){
           //end
         }
         if(GAME_BOARD[i][j].getHealth()==0){
+
           scene.remove(GAME_BOARD[i][j].getGameObject());
           scene.remove(GAME_BOARD[i][j].getObjectMargin());
+          if(powerupball == null && POWER_UP_OBJECT == null){
+          powerupcount++;
+          }
+          if(powerupcount >= 10 && powerupball == null && POWER_UP_OBJECT == null){
+
+            console.log("Power Up Instantiated");
+            POWER_UP_OBJECT = new PowerUp.PowerUpObject(GAME_BOARD[i][j].getPosition());
+            scene.add(POWER_UP_OBJECT.getGameObject());
+            powerupcount = 0;
+  
+  
+            }
           GAME_BOARD[i][j].collided = true;
           GAME_BOARD[i][j] = null;
           POINTS++;
-          powerupcount++;
+
+
+          
         }
         
         else{
           //BLOCK COLOR LOGIC
+          //GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+
         }
       }
       }
@@ -517,34 +555,16 @@ function checkCollisionBoard(){
 
 
   
-  if(powerupcount>= 10){
-    console.log("Powerup achieved");
-    powerUp();
-    powerupcount = 0;
-    
-  }
 }
 
 function powerUp(){
 
-  if(powerupball != null){
 
-    powerupcount=0;
-    return;
-  }
-
-  if(powerupcooldown){
-    console.log("Power up still on cooldown: " + poweruptimer);
-
-    powerupcount = 0;
-    return;
-  }
   
   powerupball = new Ball.Ball();
   powerupball.setPosition(ball.getPosition());
   powerupball.setDirection(new Vector3(-ball.getDirection().x,ball.getDirection().y));
   scene.add(powerupball.getGameObject());
-  poweruptimer = 10;
 
 
   
@@ -579,7 +599,7 @@ function checkCollisionPlayer(){
   let radiusSum = player.getRadius() + ball.getRadius();
  
   if(radiusSum >= distance){
-    console.log("Collision Detected");
+    //console.log("Collision Detected");
 
     let normal = new Vector3(dx,dy);
     normal.normalize();
@@ -722,14 +742,10 @@ function checkDefeat(){
     ball.resetSpeed();
   }
   if(powerupball!=null)
-    if(ball.getPosition().y < -500) {
-      let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5,0);
-      ball.setDirection(new Vector3(0,0,0))
-      ball.setPosition(ballPos);
-      isPlayerWithBall = true;
+    if(powerupball.getPosition().y < -500) {
+      powerupball = null;
 
-      //Resting speed
-      ball.resetSpeed();
+      
     }
 }
 
@@ -800,6 +816,7 @@ function resetGame(){
 
   powerupcount = 0;
   poweruptimer = 0;
+  
   powerupball = null;
   powerupcooldown = false;
 
@@ -846,6 +863,45 @@ function initGame(){
 }
 
 
+function checkCollisionPowerUp(){
+
+  if(POWER_UP_OBJECT == null){
+    return;
+  }
+  if(POWER_UP_OBJECT.getPosition().y <= -500){
+    scene.remove(POWER_UP_OBJECT.getGameObject());
+    POWER_UP_OBJECT = null;
+  }
+
+  const playerX = player.getPosition().x;
+  const playerY = player.getPosition().y;
+  const ballX = POWER_UP_OBJECT.getPosition().x;
+  const ballY = POWER_UP_OBJECT.getPosition().y;
+
+  const dx = ballX - playerX;
+  const dy = ballY - playerY;
+  
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+
+
+  let radiusSum = player.getRadius() + POWER_UP_OBJECT.getRadius();
+ 
+  if(radiusSum >= distance){
+    scene.remove(POWER_UP_OBJECT.getGameObject());
+    //create ball
+    POWER_UP_OBJECT = null;
+    powerUp();
+    console.log("Power Up Aquired");    
+  
+  }
+
+
+  
+
+
+
+}
 
 
 
@@ -885,8 +941,8 @@ function gameLoop(){
       if(ball.getSpeed()>=10){
         ball.setSpeed(10);
       }
-      console.log("Increasing ball speed...");
-      console.log(ball.getSpeed())
+      //console.log("Increasing ball speed...");
+      //console.log(ball.getSpeed())
       ball.increaseSpeed(0.0055);
       SPEED_CLOCK+= DELTA_TIME;
     }
@@ -896,7 +952,7 @@ function gameLoop(){
         if(powerupball.getSpeed()>=10){
           powerupball.setSpeed(10);
         }
-        console.log("Increasing ball speed...");
+        //console.log("Increasing ball speed...");
         console.log(powerupball.getSpeed())
         powerupball.increaseSpeed(0.0055);
         SPEED_CLOCKPU+= DELTA_TIME;
@@ -907,31 +963,13 @@ function gameLoop(){
 
     //Checking for double ball powerup, define the lenght on the powerup function
     if(powerupball != null){
-      console.log("Updating power up");
+      //console.log("Updating power up");
       powerupball.update();
       //poweruptimer -= DELTA_TIME;
     }
-  
 
-    if(poweruptimer <=0 && powerupball != null){
-      scene.remove(powerupball.getGameObject());
-      powerupball = null;
-      powerupcooldown = true;
-      SPEED_CLOCKPU=0;
-      poweruptimer = 10 ; //cooldown for new powerup
-      console.log("Removing powerup")
-      
-
-    }
-
-    if(powerupcooldown && powerupball==null){
-      poweruptimer -=DELTA_TIME;
-      if(poweruptimer <= 0){
-        powerupcooldown = false;
-        poweruptimer = 0;
-
-      }
-
+    if(POWER_UP_OBJECT != null){
+      POWER_UP_OBJECT.update();
     }
 
     //Cooldown for new powerup
@@ -942,9 +980,10 @@ function gameLoop(){
   checkCollisionBoard();
   checkCollisionWall();
   checkCollisionPlayer();
+  checkCollisionPowerUp();
   checkDefeat();
 
-  console.log("Score: " + POINTS);
+  //console.log("Score: " + POINTS);
 
 
 
