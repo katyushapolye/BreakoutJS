@@ -86,6 +86,9 @@ export class Block{
         this.collider.setFromObject(this.Body,true);
 
     }
+    changeMaterial(newMaterial){
+        this.material= newMaterial
+    }
 
     isCollided(){
         return this.collided;

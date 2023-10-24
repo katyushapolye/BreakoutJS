@@ -15,7 +15,7 @@ import * as Block from './Block.js'
 import * as Ball from './Ball.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
-import { calculateReflection, checkFaceCollision, switchFullScreen } from './Utils.js';
+import { calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint, isCircleAABBCollision} from './Utils.js';
 
 
 //Input defs
@@ -31,6 +31,7 @@ let material = null;
 let light = null;
 var keyboard = new KeyboardState();
 
+
 //Game defs
 
 const WORLD_H = 800;
@@ -42,6 +43,15 @@ let BG = null;
 let bg4Ray= null;
 let retPosition;
 let ballPos;
+let blockCol = null;
+let ballCol = null;
+let colPoint= null;
+let blockNormal = null;
+let powerupballCol = null;
+let powerupballPos = null;
+let blockNormal4Power= null;
+let newColPoint= null;
+let levelPoints= [66, 112];
 let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
 let DELTA_TIME = 1/60; //Assuming the game runs at 60fps at all times 
 
@@ -63,6 +73,7 @@ let GAME_BOARD_HEIGHT = 8;
 let GAME_BOARD_WIDTH = 8;
 
 let SPEED_CLOCK = 0;
+let SPEED_CLOCKPU=0;
 
 
 //Raycast defs
@@ -76,7 +87,9 @@ let intersectionSphere = new THREE.Mesh(
   new THREE.SphereGeometry(8, 30, 30, 0, Math.PI * 2, 0, Math.PI),
   new THREE.MeshPhongMaterial({color:"orange", shininess:"200"}));
 
-
+let testeSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(2, 30, 30, 0, Math.PI * 2, 0, Math.PI),
+    new THREE.MeshPhongMaterial({color:"red", shininess:"200"}));
 function onWindowResizeOrt() {
   
   console.log("Resizing Camera");
@@ -133,12 +146,24 @@ function setupRenderAndCamera(){
 
 
   //Renderer Init
-    renderer = initRenderer();    // Init a basic renderer, alreaday has a shadowmap
+    renderer = initMyRenderer();    // Init a basic renderer, alreaday has a shadowmap
     renderer.setSize(viewWidth,viewHeight);
 
   onWindowResizeOrt(); //SO por precaução
 
 }
+function initMyRenderer(){
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMapSoft = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(new THREE.Color("rgb(0, 0, 0)"));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  document.getElementById("webgl-output").appendChild(renderer.domElement);
+  return renderer
+}
+
 
 function setupMaterialAndLights(){
 
@@ -170,10 +195,10 @@ function setupMaterialAndLights(){
   dirLight.shadow.mapSize.height = 2048;
   dirLight.shadow.mapSize.width = 2048;
 
-  scene.add(intersectionSphere);
+  //scene.add(intersectionSphere);
   scene.add(ambientLight);
   scene.add(dirLight);
-''
+
   //light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 }
 
@@ -186,7 +211,6 @@ function rayCastPositionOnBG() {
   //let ray= new THREE.Vector2(pointer.x * window.innerWidth, pointer.y * window.innerHeight)
   // rayOrigin.set(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
   // raycast.set(rayOrigin, rayDir);
-  console.log("Starting Raycast debug")
   raycast.setFromCamera(pointer, camera)
   intersections = raycast.intersectObjects([bg4Ray], false);
 
@@ -194,8 +218,8 @@ function rayCastPositionOnBG() {
     //console.log(intersections[0].point)
     let point = intersections[0].point;
     intersectionSphere.visible = true;
-    intersectionSphere.position.set(point.x*(innerWidth/380), point.y, point.z);
-    point.x= point.x*(innerWidth/380);
+    //intersectionSphere.position.set(point.x*(innerWidth/380), point.y, point.z);
+    point.x= point.x*(innerWidth/500);
     return point;
   } else {
     return new THREE.Vector3(0, 0, 0); // Return a default point when there are no intersections.
@@ -358,16 +382,7 @@ function createBoard(level =  1){
     
         }
       }
-
-
-
-
   }
-
-
-
-
-
 }
 
 function createBackGround(){
@@ -405,33 +420,71 @@ function checkCollisionBoard(){
         continue;
       }
       try{
-      let blockCol = GAME_BOARD[i][j].getCollider();
-      let ballCol = ball.getCollider();
-      let colPoint= null;
-      let blockNormal = null; //new THREE.Vector3(0,-1,0); // need to change if it is a side collision or down ou, you know
+      blockCol = GAME_BOARD[i][j].getCollider();
+      ballCol = ball.getCollider();
+      colPoint= null;
+      blockNormal = null; //new THREE.Vector3(0,-1,0); // need to change if it is a side collision or down ou, you know
       retPosition = GAME_BOARD[i][j].getPosition();
       ballPos= ball.getPosition();
       if(ballCol.intersectsBox(blockCol)){
-        
-        //colPoint= calculateCollisionPoint(ballPos, retPosition);
-        //console.log("Colision Point")
-        //console.log(colPoint)
-        blockNormal= checkFaceCollision(ballPos, retPosition);
-        ball.setDirection(calculateReflection(ball.getDirection(),blockNormal))
-        
+        GAME_BOARD[i][j].setHealth((GAME_BOARD[i][j].getHealth() - 1 ))
 
-        scene.remove(GAME_BOARD[i][j].getGameObject());
-        scene.remove(GAME_BOARD[i][j].getObjectMargin());
-        GAME_BOARD[i][j].collided = true;
-        GAME_BOARD[i][j] = null;
-        POINTS++;
-        powerupcount++;
         
+        colPoint= calculateCollisionPoint(ballPos, retPosition);
+        testeSphere.position.set(colPoint.x, colPoint.y, 0);
+        scene.add(testeSphere)
+        blockNormal= checkFaceCollision(colPoint, retPosition, ball.getDirection());
+        if(blockNormal!=null){
+          ball.setDirection(calculateReflection(ball.getDirection(),blockNormal))
+        }
+        
+        
+        if(GAME_BOARD[i][j].getHealth()==0){
+          scene.remove(GAME_BOARD[i][j].getGameObject());
+          scene.remove(GAME_BOARD[i][j].getObjectMargin());
+          GAME_BOARD[i][j].collided = true;
+          GAME_BOARD[i][j] = null;
+          POINTS++;
+          powerupcount++;
+        }
+        
+        else{
+
+          //BLOCK COLOR LOGIC
+          let mat= new THREE.MeshLambertMaterial('rgb(60,60,180)')
+          GAME_BOARD[i][j].changeMaterial(mat)
+
+        }
 
         return;
-
       }
-    }
+      if(powerupball != null){
+        powerupballCol = powerupball.getCollider();
+        powerupballPos = powerupball.getPosition();
+        blockNormal4Power= null;
+        if(powerupballCol.intersectsBox(blockCol)){
+          GAME_BOARD[i][j].setHealth((GAME_BOARD[i][j].getHealth() - 1 ))
+
+          //start collision
+          newColPoint= calculateCollisionPoint(powerupballPos, retPosition)
+          blockNormal4Power= checkFaceCollision(newColPoint, retPosition);
+          powerupball.setDirection(calculateReflection(powerupball.getDirection(), blockNormal4Power))
+          //end
+        }
+        if(GAME_BOARD[i][j].getHealth()==0){
+          scene.remove(GAME_BOARD[i][j].getGameObject());
+          scene.remove(GAME_BOARD[i][j].getObjectMargin());
+          GAME_BOARD[i][j].collided = true;
+          GAME_BOARD[i][j] = null;
+          POINTS++;
+          powerupcount++;
+        }
+        
+        else{
+          //BLOCK COLOR LOGIC
+        }
+      }
+      }
     catch{
       //catched
       return;
@@ -445,9 +498,17 @@ function checkCollisionBoard(){
   }
 
   // se todos estiverem colididos
-  if(POINTS >= 66) {
+  if(POINTS >= 66 && CURRENT_LEVEL==0) {
     simulationOn = false; //set flag to next level
     CURRENT_LEVEL+=1;
+    resetGame();
+    createBoard(2);
+    simulationOn = true;
+    POINTS = 0;
+  }
+  if(POINTS >= 112 && CURRENT_LEVEL==1){
+    simulationOn = false; //set flag to next level
+    //CURRENT_LEVEL+=1;
     resetGame();
     createBoard(2);
     simulationOn = true;
@@ -660,6 +721,16 @@ function checkDefeat(){
     //Resting speed
     ball.resetSpeed();
   }
+  if(powerupball!=null)
+    if(ball.getPosition().y < -500) {
+      let ballPos = new THREE.Vector3(player.getPosition().x,player.getPosition().y+player.getRadius() + 5,0);
+      ball.setDirection(new Vector3(0,0,0))
+      ball.setPosition(ballPos);
+      isPlayerWithBall = true;
+
+      //Resting speed
+      ball.resetSpeed();
+    }
 }
 
 let checkMouse = (event) => {
@@ -711,6 +782,7 @@ function resetGame(){
       if(GAME_BOARD[i][j] != null){
       scene.remove(GAME_BOARD[i][j].getGameObject())
       scene.remove(GAME_BOARD[i][j].getObjectMargin())
+      GAME_BOARD[i][j]=null;
       }
       
     }
@@ -808,11 +880,27 @@ function gameLoop(){
     player.update();
 
     //Ball speed increase
-    SPEED_CLOCK+= DELTA_TIME;
-    if(SPEED_CLOCK > 10){
+    //SPEED_CLOCK+= DELTA_TIME;
+    if(SPEED_CLOCK <=16){
+      if(ball.getSpeed()>=10){
+        ball.setSpeed(10);
+      }
       console.log("Increasing ball speed...");
-      //ball.increaseSpeed(2);
-      SPEED_CLOCK = 0;
+      console.log(ball.getSpeed())
+      ball.increaseSpeed(0.0055);
+      SPEED_CLOCK+= DELTA_TIME;
+    }
+    
+    if(powerupball!=null){
+      if(SPEED_CLOCKPU <=16){
+        if(powerupball.getSpeed()>=10){
+          powerupball.setSpeed(10);
+        }
+        console.log("Increasing ball speed...");
+        console.log(powerupball.getSpeed())
+        powerupball.increaseSpeed(0.0055);
+        SPEED_CLOCKPU+= DELTA_TIME;
+      }
     }
 
     ball.update();
@@ -821,7 +909,7 @@ function gameLoop(){
     if(powerupball != null){
       console.log("Updating power up");
       powerupball.update();
-      poweruptimer -= DELTA_TIME;
+      //poweruptimer -= DELTA_TIME;
     }
   
 
@@ -829,6 +917,7 @@ function gameLoop(){
       scene.remove(powerupball.getGameObject());
       powerupball = null;
       powerupcooldown = true;
+      SPEED_CLOCKPU=0;
       poweruptimer = 10 ; //cooldown for new powerup
       console.log("Removing powerup")
       
