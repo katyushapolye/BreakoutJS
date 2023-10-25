@@ -484,7 +484,7 @@ function checkCollisionBoard(){
 
           //start collision
           newColPoint= calculateCollisionPoint(powerupballPos, retPosition)
-          blockNormal4Power= checkFaceCollision(newColPoint, retPosition);
+          blockNormal4Power= checkFaceCollision(newColPoint, retPosition, powerupball.getDirection());
           powerupball.setDirection(calculateReflection(powerupball.getDirection(), blockNormal4Power))
           //end
         

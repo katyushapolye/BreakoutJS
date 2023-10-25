@@ -93,24 +93,24 @@ function checkFaceCollision(colisionPoint, retPosition, dirVet) {
   if(retPosition.x-halfWidth == colisionPoint.x){
     return new THREE.Vector3(-1,0,0)
   }
-  if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
-    console.log("PONTA")
-    return new THREE.Vector3(0,0,0)
-  }
-  if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
-    console.log("PONTA")
-    return new THREE.Vector3(0,0,0)
-  }
+  // if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
+  //   console.log("PONTA")
+  //   return new THREE.Vector3(0,0,0)
+  // }
+  // if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
+  //   console.log("PONTA")
+  //   return new THREE.Vector3(0,0,0)
+  // }
   
-  if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
-    console.log("PONTA")
-    return new THREE.Vector3(0,0,0)
-  }
+  // if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
+  //   console.log("PONTA")
+  //   return new THREE.Vector3(0,0,0)
+  // }
   
-  if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
-    console.log("PONTA")
-    return new THREE.Vector3(0,0,0)
-  }
+  // if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
+  //   console.log("PONTA")
+  //   return new THREE.Vector3(0,0,0)
+  // }
   
   
   
