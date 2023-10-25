@@ -76,45 +76,33 @@ function calculateCollisionPoint(ballPos, aabb) {
 
 
 
-function checkFaceCollision(colisionPoint, retPosition, dirVet) {
+function checkFaceCollision(colisionPoint, retPosition, dirVet, tolerance = 0.5) {
   console.log("firstFlag");
-  let halfWidth = 33/2;
-  let halfHeight = 7.5;
+  const halfWidth = 33 / 2;
+  const halfHeight = 7.5;
 
-  if(retPosition.y-halfHeight == colisionPoint.y && dirVet.y>0){
-    return new THREE.Vector3(0,-1,0)
+  function approximatelyEqual(a, b, tolerance) {
+    return Math.abs(a - b) <= tolerance;
   }
-  if(retPosition.y+halfHeight== colisionPoint.y && dirVet.y<0){
-    return new THREE.Vector3(0,1,0)
+
+  if (approximatelyEqual(retPosition.y - halfHeight, colisionPoint.y, tolerance) && dirVet.y > 0) {
+    return new THREE.Vector3(0, -1, 0);
   }
-  if(retPosition.x+halfWidth == colisionPoint.x && dirVet.x < 0){
-    return new THREE.Vector3(1,0,0)
+  if (approximatelyEqual(retPosition.y + halfHeight, colisionPoint.y, tolerance) && dirVet.y < 0) {
+    return new THREE.Vector3(0, 1, 0);
   }
-  if(retPosition.x-halfWidth == colisionPoint.x && dirVet.x > 0){
-    return new THREE.Vector3(-1,0,0)
+  if (approximatelyEqual(retPosition.x + halfWidth, colisionPoint.x, tolerance) && dirVet.x < 0) {
+    return new THREE.Vector3(1, 0, 0);
   }
-  // if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
-  //   console.log("PONTA")
-  //   return new THREE.Vector3(0,0,0)
-  // }
-  // if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
-  //   console.log("PONTA")
-  //   return new THREE.Vector3(0,0,0)
-  // }
-  
-  // if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
-  //   console.log("PONTA")
-  //   return new THREE.Vector3(0,0,0)
-  // }
-  
-  // if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
-  //   console.log("PONTA")
-  //   return new THREE.Vector3(0,0,0)
-  // }
-  
-  
-  
+  if (approximatelyEqual(retPosition.x - halfWidth, colisionPoint.x, tolerance) && dirVet.x > 0) {
+    return new THREE.Vector3(-1, 0, 0);
+  }
+
+  // If none of the conditions match, you might want to handle this case or return a default value.
+  // For now, I'm returning an empty vector (0, 0, 0) when no collision occurs.
+  return new THREE.Vector3(-dirVet.x, -dirVet.y, 0);
 }
+
 
 
 function switchFullScreen(isFullScreen) {
