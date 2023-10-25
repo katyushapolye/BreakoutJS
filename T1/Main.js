@@ -743,6 +743,7 @@ function checkDefeat(){
   if(powerupball!=null)
     if(powerupball.getPosition().y < -500) {
       powerupball = null;
+      SPEED_CLOCKPU=0;
 
       
     }
@@ -819,7 +820,8 @@ function resetGame(){
   powerupball = null;
   powerupcooldown = false;
 
-
+  SPEED_CLOCKPU=0;
+  
   ball.resetSpeed();
   win = 0;
   
