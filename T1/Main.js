@@ -464,6 +464,7 @@ function checkCollisionBoard(){
           GAME_BOARD[i][j].collided = true;
           GAME_BOARD[i][j] = null;
           POINTS++;
+          return;
 
         }
         
@@ -507,6 +508,7 @@ function checkCollisionBoard(){
           GAME_BOARD[i][j].collided = true;
           GAME_BOARD[i][j] = null;
           POINTS++;
+          return;
 
 
         }

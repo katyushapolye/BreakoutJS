@@ -87,10 +87,10 @@ function checkFaceCollision(colisionPoint, retPosition, dirVet) {
   if(retPosition.y+halfHeight== colisionPoint.y && dirVet.y<0){
     return new THREE.Vector3(0,1,0)
   }
-  if(retPosition.x+halfWidth == colisionPoint.x){
+  if(retPosition.x+halfWidth == colisionPoint.x && dirVet.x < 0){
     return new THREE.Vector3(1,0,0)
   }
-  if(retPosition.x-halfWidth == colisionPoint.x){
+  if(retPosition.x-halfWidth == colisionPoint.x && dirVet.x > 0){
     return new THREE.Vector3(-1,0,0)
   }
   // if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
