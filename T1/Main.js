@@ -868,6 +868,7 @@ function checkCollisionPowerUp(){
   if(POWER_UP_OBJECT.getPosition().y <= -500){
     scene.remove(POWER_UP_OBJECT.getGameObject());
     POWER_UP_OBJECT = null;
+    return;
   }
 
   const playerX = player.getPosition().x;

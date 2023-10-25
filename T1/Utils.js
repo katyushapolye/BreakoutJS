@@ -50,67 +50,70 @@ function isCircleAABBCollision(ballPos, aabb) {
 
 
 function calculateCollisionPoint(ballPos, aabb) {
-  console.log("BALLPOS: ", ballPos)
-  console.log("AABB: ", aabb)
-  let newVet= new THREE.Vector3();
-  newVet.subVectors(aabb, ballPos)
-  newVet.normalize();
-  newVet.x=(newVet.x *8)+ballPos.x;
-  newVet.y=(newVet.y *8)+ballPos.y;
+  let halfWidth = 33/2;
+  let halfHeight = 7.5;
+  let circle= new THREE.Vector2(ballPos.x, ballPos.y)
+  let aabbMin= new THREE.Vector2((aabb.x -(halfWidth)), (aabb.y -halfHeight));
+  let aabbMax= new THREE.Vector2(aabb.x +(halfWidth), aabb.y + halfHeight)
 
-  console.log("VETOR DO PONTO DE COLISÃO:", newVet)
-  return newVet
+  let closestPoint= new THREE.Vector2(
+  Math.max(aabbMin.x, Math.min(circle.x, aabbMax.x)), //x
+  Math.max(aabbMin.y, Math.min(circle.y, aabbMax.y))  //y
+  )
+  return closestPoint;
+  // console.log("BALLPOS: ", ballPos)
+  // console.log("AABB: ", aabb)
+  // let newVet= new THREE.Vector3();
+  // newVet.subVectors(aabb, ballPos)
+  // newVet.normalize();
+  // newVet.x=(newVet.x *8)+ballPos.x;
+  // newVet.y=(newVet.y *8)+ballPos.y;
+
+  // console.log("VETOR DO PONTO DE COLISÃO:", newVet)
+  // return newVet
   
 }
 
 
 
-function checkFaceCollision(colisionPoint, retPosition) {
+function checkFaceCollision(colisionPoint, retPosition, dirVet) {
   console.log("firstFlag");
   let halfWidth = 33/2;
   let halfHeight = 7.5;
+
+  if(retPosition.y-halfHeight == colisionPoint.y && dirVet.y>0){
+    return new THREE.Vector3(0,-1,0)
+  }
+  if(retPosition.y+halfHeight== colisionPoint.y && dirVet.y<0){
+    return new THREE.Vector3(0,1,0)
+  }
+  if(retPosition.x+halfWidth == colisionPoint.x){
+    return new THREE.Vector3(1,0,0)
+  }
+  if(retPosition.x-halfWidth == colisionPoint.x){
+    return new THREE.Vector3(-1,0,0)
+  }
+  if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
+    console.log("PONTA")
+    return new THREE.Vector3(0,0,0)
+  }
+  if(retPosition.y-halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
+    console.log("PONTA")
+    return new THREE.Vector3(0,0,0)
+  }
   
-  if (colisionPoint.y >= (retPosition.y + halfHeight) && colisionPoint.x>(retPosition.x-halfWidth) && colisionPoint.x<(retPosition.x+halfWidth)) {
-    console.log("NORMAL FOUND UP (0, 1, 0)")
-    console.log(colisionPoint)
-    console.log(" y >=")
-    console.log(retPosition.y + halfHeight)
-    console.log("retPos: ")
-    console.log(retPosition)
-    return new THREE.Vector3(0, 1, 0); 
+  if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x-halfWidth==colisionPoint.x){
+    console.log("PONTA")
+    return new THREE.Vector3(0,0,0)
   }
-  if (colisionPoint.y <= ((retPosition.y - halfHeight))&& colisionPoint.x>(retPosition.x-halfWidth) && colisionPoint.x<(retPosition.x+halfWidth)) {
-    console.log("NORMAL FOUND DOWN (0, -1, 0)")
-    console.log(colisionPoint)
-    console.log(" y <=")
-    console.log(retPosition.y - halfHeight)
-    console.log("retPos: ")
-    console.log(retPosition)
-    return new THREE.Vector3(0, -1, 0);
+  
+  if(retPosition.y+halfHeight == colisionPoint.y &&retPosition.x+halfWidth==colisionPoint.x){
+    console.log("PONTA")
+    return new THREE.Vector3(0,0,0)
   }
-  if (colisionPoint.x <= (retPosition.x - halfWidth)&& colisionPoint.y>(retPosition.y-halfHeight) && colisionPoint.y<(retPosition.y+halfHeight)) {
-    console.log("NORMAL FIND LEFT (-1, 0, 0)")
-    console.log(colisionPoint)
-    console.log(" x <=")
-    console.log(retPosition.x - halfWidth)
-    console.log("retPos: ")
-    console.log(retPosition)
-    return new THREE.Vector3(-1, 0, 0); 
-  }
-  if (colisionPoint.x >= (retPosition.x + halfWidth)&& colisionPoint.y>(retPosition.y-halfHeight) && colisionPoint.y<(retPosition.y+halfHeight)) {
-    console.log("NORMAL FIND RIGHT (1, 0, 0)")
-    console.log(colisionPoint)
-    console.log(" x >=")
-    console.log(retPosition.x + halfWidth)
-    console.log("retPos: ")
-    console.log(retPosition)
-    return new THREE.Vector3(1, 0, 0); 
-  }
-   else {
-    console.log("retPos: ", retPosition)
-    console.log("ERRO")
-    return new THREE.Vector3(0, -1, 0);
-  }
+  
+  
+  
 }
 
 

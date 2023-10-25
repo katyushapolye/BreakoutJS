@@ -21,6 +21,8 @@ export class Ball{
     constructor() {
         this.Body = new THREE.Mesh(new THREE.SphereGeometry(8),
         new THREE.MeshPhongMaterial({ color: 'rgb(64, 64, 64)' , shininess:"200"}));
+        this.Body.castShadow = true;
+
         // this.collider = new THREE.Box3();
         // this.Body.geometry.computeBoundingBox();
         // this.collider.copy(this.Body.geometry.boundingBox);
