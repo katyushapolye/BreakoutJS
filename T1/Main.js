@@ -145,7 +145,7 @@ function setupRenderAndCamera(){
     window.addEventListener('pointermove',onPointerMove);
     
   
-    camera.position.set(0, 0, 1000);
+    camera.position.set(0, -650, 650);
     camera.lookAt(new THREE.Vector3(0,0,0));
 
 
@@ -159,7 +159,9 @@ function setupRenderAndCamera(){
 
 
   const textureLoader = new THREE.TextureLoader();
-  let textureEquirec = textureLoader.load( 'Textures/skybox.jpg');
+  let textureEquirec = textureLoader.load( 'Textures/skybox2.jpg');
+  textureEquirec.mapping = THREE.EquirectangularReflectionMapping; // Reflection as default
+	textureEquirec.encoding = THREE.sRGBEncoding;
   scene.background = textureEquirec;
 
 
