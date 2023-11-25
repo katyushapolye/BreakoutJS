@@ -16,11 +16,13 @@ export class Block{
 
     health = 1; //number of hits to destroy
 
+    isInvincible = false;
+
     
 
     //Talvez seja legal passar a cor como parametro do construtor
     constructor(color = null,health = 1){
-        console.log("Block created ")
+        //console.log("Block created ")
         let colorRand = color;
         if(color == null){
         let r = Math.floor(Math.random()*256);
@@ -31,9 +33,11 @@ export class Block{
         let colorRand = 'rgb(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ')';
         
         }
-        console.log("Block Color = " + colorRand);
+        //console.log("Block Color = " + colorRand);
         this.Body = new THREE.Mesh(new THREE.BoxGeometry(this.BLOCK_W,this.BLOCK_H,30),
         new THREE.MeshLambertMaterial({ color:colorRand}));
+
+
         this.Body.castShadow = true;
 
         this.collider = new THREE.Box3();
@@ -67,6 +71,13 @@ export class Block{
 
     getHealth(){
         return this.health;
+    }
+    setInvincibility(inv){
+        this.isInvincible = inv;
+    }
+
+    getInvincibility(){
+        return this.isInvincible;
     }
 
     setHealth(newHealth){

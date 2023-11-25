@@ -17,6 +17,7 @@ import * as PowerUp from './PowerUp.js';
 import { Scene, Vector3 } from '../build/three.module.js';
 
 import { calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint, isCircleAABBCollision} from './Utils.js';
+import { color } from '../libs/util/dat.gui.module.js';
 
 
 //Input defs
@@ -154,6 +155,18 @@ function setupRenderAndCamera(){
 
   onWindowResizeOrt(); //SO por precaução
 
+
+
+
+  const textureLoader = new THREE.TextureLoader();
+  let textureEquirec = textureLoader.load( 'Textures/skybox.jpg');
+  scene.background = textureEquirec;
+
+
+  //Orbit controls
+
+  new OrbitControls( camera, renderer.domElement );
+
 }
 function initMyRenderer(){
   var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -264,6 +277,9 @@ function createBoard(level =  1){
   cores.push(grey);
   let GAME_BOARD_HEIGHT = 6;
   let GAME_BOARD_WIDTH = 11;
+
+  var textureLoader = new THREE.TextureLoader();
+  var rust = textureLoader.load('Textures/rustTex.jpeg');
   
 
   for(let i = 0;i<GAME_BOARD_HEIGHT;i++){
@@ -283,6 +299,9 @@ function createBoard(level =  1){
 
       if(i == 5){
         GAME_BOARD[i][j].setHealth(2);
+        GAME_BOARD[i][j].setColor("rgb(255,255,255)");
+        GAME_BOARD[i][j].getGameObject().material.map = rust;
+
       }
 
     }
@@ -391,6 +410,109 @@ function createBoard(level =  1){
         }
       }
   }
+  if(level == 3){
+    let GAME_BOARD_HEIGHT = 11; 
+    let GAME_BOARD_WIDTH = 12;
+    let cores = [];
+    cores.push("rgb(30,255,30)"); //green
+    //cores.push("rgb(255,255,100)"); //yellow
+    cores.push("rgb(30,30,255)") //blue
+    cores.push("rgb(255,30,30)"); //red
+  
+    let grey = "rgb(160,160,160)" //grey;
+    //level 3
+    var c = 0;
+      for(let i = 0;i<GAME_BOARD_HEIGHT;i++){
+        for(let j = 0;j<GAME_BOARD_WIDTH;j+=2){
+          GAME_BOARD[i][j] = new Block.Block(cores[0]);
+          GAME_BOARD[i][j].setPosition(new THREE.Vector3(( 70 + -GAME_BOARD[i][j].getWidth()/2+ j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 - 40 ,
+          -120 + (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
+          0));
+          scene.add(GAME_BOARD[i][j].getGameObject());
+          scene.add(GAME_BOARD[i][j].getObjectMargin());
+          GAME_BOARD[i][j].updateCollider();
+          GAME_BOARD[i][j].getObjectMargin().update();
+
+
+
+        }
+
+      }
+
+      //Invencible blocks and colors irregulars
+
+      for(var i = 0;i<GAME_BOARD_HEIGHT;i++){
+        GAME_BOARD[i][0].setColor(cores[1]);
+        GAME_BOARD[i][2].setColor(cores[2]);
+        GAME_BOARD[i][4].setColor(cores[0]);
+
+        GAME_BOARD[i][6].setColor(cores[0]);
+        GAME_BOARD[i][8].setColor(cores[2]);
+        GAME_BOARD[i][10].setColor(cores[1]);
+        
+
+      }
+
+      //GAME_BOARD[7][0].setColor("rgb(230,120,0)")
+      //GAME_BOARD[7][2].setColor("rgb(230,120,0)")
+      //GAME_BOARD[7][4].setColor("rgb(230,120,0)")
+      //GAME_BOARD[7][6].setColor("rgb(230,120,0)")
+      //GAME_BOARD[7][8].setColor("rgb(230,120,0)")
+      GAME_BOARD[7][8].setColor("rgb(230,230,0)")
+      GAME_BOARD[7][8].setInvincibility(true);
+
+      GAME_BOARD[7][6].setColor("rgb(230,230,0)")
+      GAME_BOARD[7][6].setInvincibility(true);
+
+      GAME_BOARD[7][4].setColor("rgb(230,230,0)")
+      GAME_BOARD[7][4].setInvincibility(true);
+
+
+      GAME_BOARD[7][2].setColor("rgb(230,230,0)")
+      GAME_BOARD[7][2].setInvincibility(true);
+
+
+
+      GAME_BOARD[1][2].setColor("rgb(230,230,0)")
+      GAME_BOARD[1][2].setInvincibility(true);
+      GAME_BOARD[1][8].setColor("rgb(230,230,0)")
+      GAME_BOARD[1][8].setInvincibility(true);
+      GAME_BOARD[1][6].setColor("rgb(230,230,0)")
+      GAME_BOARD[1][6].setInvincibility(true);
+      GAME_BOARD[1][4].setColor("rgb(230,230,0)")
+      GAME_BOARD[1][4].setInvincibility(true);
+
+      GAME_BOARD[1][0].setColor("rgb(230,120,0)")
+      GAME_BOARD[1][0].setInvincibility(false);
+      GAME_BOARD[1][10].setColor("rgb(230,120,0)")
+      GAME_BOARD[1][10].setInvincibility(false);
+
+
+
+
+      var i = 7;
+      for(var j = 3;j<9;j+=2){
+        GAME_BOARD[i][j] = new Block.Block("rgb(230,120,0)");
+
+        GAME_BOARD[i][j].setPosition(new THREE.Vector3(( 70 + -GAME_BOARD[i][j].getWidth()/2+ j*GAME_BOARD[i][j].getWidth()) -(WORLD_W/2)  + (GAME_BOARD[i][j].getWidth())/2 - 40 ,
+        -120 + (i*15) + (WORLD_H/2) - (15*(GAME_BOARD[i][j].getHeight()/2)), //cuidado com esse offset estranho aqui
+        0));
+
+        scene.add(GAME_BOARD[i][j].getGameObject());
+        scene.add(GAME_BOARD[i][j].getObjectMargin());
+        GAME_BOARD[i][j].setInvincibility(false);
+        GAME_BOARD[i][j].updateCollider();
+        GAME_BOARD[i][j].getObjectMargin().update();
+
+        
+
+      }
+
+
+
+
+    
+  }
 }
 
 function createBackGround(){
@@ -399,6 +521,8 @@ function createBackGround(){
   const planeHeight = 10000;
   const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
   BG = new THREE.Mesh(planeGeometry, setDefaultMaterial('rgb(255,255,255)'));
+  BG.material.transparent = true;
+  BG.material.opacity = 0;
   
   BG.position.set(0,0,-10)
   BG.receiveShadow = true;
@@ -473,6 +597,7 @@ function checkCollisionBoard(){
           //BLOCK COLOR LOGIC
           
           GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+          GAME_BOARD[i][j].getGameObject().material.map = null; 
 
         }
       }
@@ -516,7 +641,9 @@ function checkCollisionBoard(){
         
         else{
           //BLOCK COLOR LOGIC
+          
           GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+          GAME_BOARD[i][j].getGameObject().material.map = null; 
 
         }
         }
@@ -548,6 +675,15 @@ function checkCollisionBoard(){
     //CURRENT_LEVEL+=1;
     resetGame();
     createBoard(2);
+    simulationOn = true;
+    POINTS = 0;
+  }
+
+  if(POINTS >= 52 && CURRENT_LEVEL==3){
+    simulationOn = false; //set flag to next level
+    //CURRENT_LEVEL+=1;
+    resetGame();
+    createBoard(1);
     simulationOn = true;
     POINTS = 0;
   }
@@ -785,8 +921,8 @@ function checkKeyboard(){
 
   if(keyboard.down("G")){
     resetGame();
-    CURRENT_LEVEL = (CURRENT_LEVEL%2) + 1;
-    createBoard((CURRENT_LEVEL%2 )+ 1);
+    CURRENT_LEVEL = (CURRENT_LEVEL%3) + 1;
+    createBoard((CURRENT_LEVEL%3 )+ 1);
   }
   
 }
@@ -821,6 +957,8 @@ function resetGame(){
   powerupcooldown = false;
 
   SPEED_CLOCKPU=0;
+
+  POINTS = 0;
   
   ball.resetSpeed();
   win = 0;
@@ -985,7 +1123,9 @@ function gameLoop(){
   checkCollisionPowerUp();
   checkDefeat();
 
-  //console.log("Score: " + POINTS);
+
+
+  console.log("Score: " + POINTS);
 
 
 

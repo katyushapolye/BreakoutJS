@@ -77,7 +77,6 @@ function calculateCollisionPoint(ballPos, aabb) {
 
 
 function checkFaceCollision(colisionPoint, retPosition, dirVet, tolerance = 0.5) {
-  console.log("firstFlag");
   const halfWidth = 33 / 2;
   const halfHeight = 7.5;
 

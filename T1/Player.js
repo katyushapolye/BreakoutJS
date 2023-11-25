@@ -28,7 +28,7 @@ export class Player{
 
 
     constructor(){
-        console.log("Player Constructor triggered");
+        //console.log("Player Constructor triggered");
         this.parent = new THREE.Object3D();
         this.parent.position.set(0,-300,0);
 
