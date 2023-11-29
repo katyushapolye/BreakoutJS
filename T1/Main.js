@@ -4,6 +4,10 @@ import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
 import KeyboardState from '../libs/util/KeyboardState.js'
+import {GLTFLoader} from '../build/jsm/loaders/GLTFLoader.js';
+
+import { normalizeAndRescale,fixPosition,getMaxSize } from './Utils.js';     
+
 
 
 
@@ -33,6 +37,10 @@ let material = null;
 let light = null;
 var keyboard = new KeyboardState();
 
+let leftWall = null;
+let rightWall = null;
+let topWall = null;
+
 
 //Game defs
 
@@ -41,6 +49,7 @@ const WORLD_W = 400;
 let ball = null;
 let powerupball = null;
 let player = null;
+let pShip = null;
 let BG = null;
 let bg4Ray= null;
 let retPosition;
@@ -538,6 +547,27 @@ function createBackGround(){
   bg4Ray.position.set(0,0,0);
   scene.add(bg4Ray);
 
+  //Walls
+
+  const boxGeo = new THREE.BoxGeometry(200,1000,100);
+  leftWall = new THREE.Mesh(boxGeo, setDefaultMaterial('rgb(255,255,255)'));
+  rightWall = new THREE.Mesh(boxGeo, setDefaultMaterial('rgb(255,255,255)'));
+
+  topWall = new THREE.Mesh(boxGeo, setDefaultMaterial('rgb(255,255,255)'));
+  topWall.rotateZ(3.1415/2);
+  topWall.position.set(0,500,0);
+
+  leftWall.position.set(-310,0,0);
+  rightWall.position.set(310,0,0);
+
+  scene.add(leftWall);
+  scene.add(rightWall);
+scene.add(topWall);
+
+
+
+
+
 
 }
 
@@ -982,6 +1012,43 @@ function initGame(){
   //Init of player
   player = new Player.Player()
   scene.add(player.getGameObject());
+  //creating ship
+
+
+  var loader = new GLTFLoader( );
+  loader.load("./Models/ship.gltf", function ( gltf ) {
+     var obj = gltf.scene;
+     obj.visible = true;
+     obj.name = "ship";
+
+     
+
+     obj.traverse( function (child)
+     {
+     if( child.isMesh ) child.castShadow = true;
+     if( child.material ) child.material.side = THREE.DoubleSide; 
+     });
+
+     var obj = normalizeAndRescale(obj, 150);
+     var obj = fixPosition(obj);
+     obj.rotateY(THREE.MathUtils.degToRad(270));
+
+     obj.position.set(0,0,0);
+     pShip = obj;
+     scene.add(pShip);
+     console.log(obj);
+     
+   
+  });
+
+
+
+
+
+
+
+
+
   player.setPosition(new THREE.Vector3(0,-250,0));
 
   scene.add(player.getDebug())
@@ -1045,6 +1112,13 @@ function checkCollisionPowerUp(){
 
 }
 
+function updateShipPosition(){
+
+  if(pShip != null){
+
+  pShip.position.set(player.getPosition().x,player.getPosition().y-90,player.getPosition().z);
+  }
+}
 
 
 //Game loop
@@ -1124,6 +1198,8 @@ function gameLoop(){
   checkCollisionPlayer();
   checkCollisionPowerUp();
   checkDefeat();
+
+  updateShipPosition();
 
 
 

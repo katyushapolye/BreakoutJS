@@ -121,5 +121,48 @@ function switchFullScreen(isFullScreen) {
   }
 }
 
+function normalizeAndRescale(obj, newScale)
+{
+  var scale = getMaxSize(obj); // Available in 'utils.js'
+  obj.scale.set(newScale * (1.0/scale),
+                newScale * (1.0/scale),
+                newScale * (1.0/scale));
+  return obj;
+}
 
-export{calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint , isCircleAABBCollision}
+function fixPosition(obj)
+{
+  // Fix position of the object over the ground plane
+  var box = new THREE.Box3().setFromObject( obj );
+  if(box.min.y > 0)
+    obj.translateY(-box.min.y);
+  else
+    obj.translateY(-1*box.min.y);
+  return obj;
+}
+
+function getMaxSize(obj) {
+  var maxSize;
+  var box = new THREE.Box3().setFromObject(obj);
+  var min = box.min;
+  var max = box.max;
+
+  var size = new THREE.Box3();
+  size.x = max.x - min.x;
+  size.y = max.y - min.y;
+  size.z = max.z - min.z;
+
+  if (size.x >= size.y && size.x >= size.z)
+     maxSize = size.x;
+  else {
+     if (size.y >= size.z)
+        maxSize = size.y;
+     else {
+        maxSize = size.z;
+     }
+  }
+  return maxSize;
+}
+
+
+export{calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint , isCircleAABBCollision,fixPosition,normalizeAndRescale,getMaxSize}

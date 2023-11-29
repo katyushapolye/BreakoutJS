@@ -2,14 +2,17 @@
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
-import { CSG } from '../libs/other/CSGMesh.js'        
+import { CSG } from '../libs/other/CSGMesh.js'
+import {GLTFLoader} from '../build/jsm/loaders/GLTFLoader.js';
 
 //Attributes
 
+let shipVar = null;
 
 export class Player{
 
     parent = null; //Gameobject, the position is the center of the CSG object that was cut
+    ship = null;
 
     radius = 90;
     offset = -20;
@@ -64,6 +67,8 @@ export class Player{
 
 
 
+
+
         
 
 
@@ -111,6 +116,13 @@ export class Player{
 }
     getGameObject(){
         return this.parent;
+    }
+
+    getShip(){
+        return this.ship;
+    }
+    setShip(obj){
+        this.ship = obj;
     }
 
     getDebug(){
