@@ -5,7 +5,7 @@ import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
 import KeyboardState from '../libs/util/KeyboardState.js'
 import {GLTFLoader} from '../build/jsm/loaders/GLTFLoader.js';
-
+import {ColladaLoader} from '../build/jsm/loaders/ColladaLoader.js';
 import { normalizeAndRescale,fixPosition,getMaxSize } from './Utils.js';     
 
 
@@ -40,6 +40,12 @@ var keyboard = new KeyboardState();
 let leftWall = null;
 let rightWall = null;
 let topWall = null;
+let gameStarted=false;
+
+//audio
+
+
+
 
 
 //Game defs
@@ -62,6 +68,7 @@ let powerupballCol = null;
 let powerupballPos = null;
 let blockNormal4Power= null;
 let newColPoint= null;
+let gameOver = false;
 let levelPoints= [66, 112];
 let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
 let DELTA_TIME = 1/60; //Assuming the game runs at 60fps at all times 
@@ -147,7 +154,7 @@ function setupRenderAndCamera(){
     let viewWidth =  WORLD_W;
     let viewHeight = WORLD_H;
     
-    camera = new THREE.PerspectiveCamera(50,0.5,1,2000)
+    //camera = new THREE.PerspectiveCamera(50,0.5,1,2000)
 
 
     window.addEventListener( 'resize', onWindowResizeOrt, false );
@@ -156,6 +163,7 @@ function setupRenderAndCamera(){
   
     camera.position.set(0, -650, 650);
     camera.lookAt(new THREE.Vector3(0,0,0));
+    
 
 
   //Renderer Init
@@ -603,6 +611,7 @@ function checkCollisionBoard(){
         
         
         if(GAME_BOARD[i][j].getHealth()==0){
+          playAudio(1)
           scene.remove(GAME_BOARD[i][j].getGameObject());
           scene.remove(GAME_BOARD[i][j].getObjectMargin());
           if(powerupball == null && POWER_UP_OBJECT == null){
@@ -627,7 +636,7 @@ function checkCollisionBoard(){
         else{
 
           //BLOCK COLOR LOGIC
-          
+          playAudio(2)
           GAME_BOARD[i][j].setColor("rgb(80,80,80)");
           GAME_BOARD[i][j].getGameObject().material.map = null; 
 
@@ -647,6 +656,7 @@ function checkCollisionBoard(){
           //end
         
         if(GAME_BOARD[i][j].getHealth()==0){
+          playAudio(1)
 
           scene.remove(GAME_BOARD[i][j].getGameObject());
           scene.remove(GAME_BOARD[i][j].getObjectMargin());
@@ -673,6 +683,7 @@ function checkCollisionBoard(){
         
         else{
           //BLOCK COLOR LOGIC
+          playAudio(2)
           
           GAME_BOARD[i][j].setColor("rgb(80,80,80)");
           GAME_BOARD[i][j].getGameObject().material.map = null; 
@@ -791,7 +802,9 @@ function checkCollisionPlayer(){
         };
       }
       minimumVet.normalize();
+      playAudio(4);
       ball.setDirection(minimumVet);
+      
 
 
   }
@@ -847,7 +860,9 @@ function checkCollisionPlayer(){
           };
         }
         minimumVet.normalize();
+        playAudio(4)
         powerupball.setDirection(minimumVet);
+        
   
   
     }
@@ -904,9 +919,14 @@ function checkDefeat(){
     ball.setDirection(new Vector3(0,0,0))
     ball.setPosition(ballPos);
     isPlayerWithBall = true;
-
+    player.setLife(player.getLife() - 1);
     //Resting speed
     ball.resetSpeed();
+    if(player.getLife()==0){
+      console.log(player.getLife())
+      resetGame();
+      createBoard(1);
+    }
   }
   if(powerupball!=null)
     if(powerupball.getPosition().y < -500) {
@@ -917,21 +937,6 @@ function checkDefeat(){
     }
 }
 
-let checkMouse = (event) => {
-  if(simulationOn) {
-    if(event.button == 0) {
-      if(isPlayerWithBall) {
-        // esse if é necessário porque se não sempre que apertar space a bola sobe
-        isPlayerWithBall = false;
-        ball.setDirection(new THREE.Vector3(0,1,0));
-        console.log("Ball is Released");
-      }
-    }
-  }
-}
-
-
-window.addEventListener('click', checkMouse)
 
 
 function checkKeyboard(){
@@ -1129,6 +1134,7 @@ function gameLoop(){
   let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,0,0);
 
   if(win < 64) checkKeyboard();
+  
 
 
   //Process Game logic (Check colision/Reflection,Check death and collision culling,move player to target position)
@@ -1218,8 +1224,147 @@ function gameLoop(){
 
 
 
+  let startButton  = document.getElementById("startBtn")
+  startButton.innerHTML = 'Start Game';
+  startButton.addEventListener("click", onButtonPressedStart);
 
-initGame();
-gameLoop();
+  let gameOverScreen = document.getElementById('gameOver-screen');
+  gameOverScreen.style.display = 'none';
+
+function onButtonPressedStart() {
+  let startingScreen = document.getElementById('start-screen');
+  startingScreen.classList.add('hidden');
+  startingScreen.addEventListener('transitionend', (e) => {
+      const element = e.target;
+      element.remove();
+  });
+  stopAudio(0);
+  initGame();
+  gameLoop();
+}
+
+
+let checkMouse = (event) => {
+    if(simulationOn){
+      if(event.button == 0) {
+        if(isPlayerWithBall) {
+          // esse if é necessário porque se não sempre que apertar space a bola sobe
+          isPlayerWithBall = false;
+          ball.setDirection(new THREE.Vector3(0,1,0));
+          console.log("Ball is Released");
+        }
+      }
+    }
+}
+window.addEventListener('click', checkMouse);
+
+
+// camera = new THREE.PerspectiveCamera(50, 0.5, 1, 2000);
+// const listener = new THREE.AudioListener();
+// camera.add(listener);
+
+// const audioLoader = new THREE.AudioLoader();
+// const audios = [
+//   './soundsMusics/bgMusic.mp3',
+//   './soundsMusics/bloco1.mp3',
+//   './soundsMusics/bloco2.mp3',
+//   './soundsMusics/bloco3.mp3',
+//   './soundsMusics/rebatedor.mp3'
+// ];
+
+// let audioObjects = audios.map((audioFile, index) => {
+//   const audio = new THREE.Audio(listener);
+
+//   // Use a callback to ensure that the audio file is loaded before proceeding
+//   audioLoader.load(audioFile, function(buffer) {
+//     audio.setBuffer(buffer);
+//     audio.setLoop(true);
+//     audio.setVolume(0.5);
+
+//     // After loading, play the audio if needed
+//     if (index === 0) {
+//       playAudio(0);
+//     }
+//   });
+
+//   return audio;
+// });
+
+// function playAudio(index) {
+//   if (audioObjects[index]) {
+//     console.log(audioObjects[index]);
+//     audioObjects[index].play();
+//   } else {
+//     console.log("ERRO");
+//   }
+// }
+
+// function stopAudio(index) {
+//   if (audioObjects[index]) {
+//     audioObjects[index].stop();
+//   }
+// }
+
+camera = new THREE.PerspectiveCamera(50, 0.5, 1, 2000);
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const audioLoader = new THREE.AudioLoader();
+const audios = [
+  './soundsMusics/bgMusic.mp3',
+  './soundsMusics/bloco1.mp3',
+  './soundsMusics/bloco2.mp3',
+  './soundsMusics/bloco3.mp3',
+  './soundsMusics/rebatedor.mp3'
+];
+
+let audioObjects = audios.map((audioFile, index) => {
+  const audio = new THREE.Audio(listener);
+
+  // Use a callback to ensure that the audio file is loaded before proceeding
+  audioLoader.load(audioFile, function(buffer) {
+    audio.setBuffer(buffer);
+    audio.setVolume(0.5);
+
+    // Set loop only for the first audio
+    if (index === 0) {
+      audio.setLoop(true);
+    }
+
+    // After loading, play the audio if needed
+    if (index === 0) {
+      playAudio(0);
+    }
+  });
+
+  return audio;
+});
+
+function playAudio(index) {
+  if (audioObjects[index]) {
+    console.log(audioObjects[index]);
+    audioObjects[index].play();
+  } else {
+    console.log("ERRO");
+  }
+}
+
+function stopAudio(index) {
+  if (audioObjects[index]) {
+    audioObjects[index].stop();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 

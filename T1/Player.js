@@ -16,6 +16,7 @@ export class Player{
 
     radius = 90;
     offset = -20;
+    life = 5;
     //normals = [];
     //blocks = [];
 
@@ -140,6 +141,14 @@ export class Player{
 
     getPosition(){
         return this.parent.position;
+    }
+    
+    getLife(){
+        return this.life;
+    }
+
+    setLife(newLifeValue){
+        this.life= newLifeValue;
     }
 
     //sets the targetPosition as newPosition to player go

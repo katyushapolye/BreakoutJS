@@ -5,6 +5,8 @@
 
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../html/resources/default.css">
+    <link rel="stylesheet" type="text/css" href="./css/startscreen.css">
+    <!-- <link rel="stylesheet" type="text/css" href="./css/gameover.css"> -->
     <meta name="viewport" content="width=device-width, initial-scale=1">  
   </head>
 
@@ -15,6 +17,16 @@
     {"imports": {"three": "../build/three.module.js"}} 
   </script>  
 
+  <section id="start-screen">
+    <h1 id="welcome-text">Bem Vindo ao T3</h1>
+    <div id="start-loader"></div> 
+    <button class="button" id="startBtn">Start Game</button>
+  </section>
+
+  <section id="gameOver-screen">
+    <h1 id="gameOver-text">Game Over</h1>
+  </section>
+  
   <div id="webgl-output">     
     <script type="module" src="Main.js"></script>
   </div>
