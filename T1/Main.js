@@ -18,7 +18,7 @@ import * as Player from "./Player.js";
 import * as Block from './Block.js'
 import * as Ball from './Ball.js';  
 import * as PowerUp from './PowerUp.js';
-import { Scene, Vector3 } from '../build/three.module.js';
+import { OctahedronBufferGeometry, Scene, Vector3 } from '../build/three.module.js';
 
 import { calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint, isCircleAABBCollision} from './Utils.js';
 import { color } from '../libs/util/dat.gui.module.js';
@@ -41,7 +41,6 @@ let leftWall = null;
 let rightWall = null;
 let topWall = null;
 let gameStarted=false;
-
 //audio
 
 
@@ -72,7 +71,8 @@ let gameOver = false;
 let levelPoints= [66, 112];
 let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
 let DELTA_TIME = 1/60; //Assuming the game runs at 60fps at all times 
-
+var orbitControls = null;
+var orbitEnable = false;
 let POWER_UP_OBJECT = null;
 
 //Game control defs
@@ -184,8 +184,7 @@ function setupRenderAndCamera(){
 
   //Orbit controls
 
-  new OrbitControls( camera, renderer.domElement );
-
+  orbitControls = new OrbitControls( camera, renderer.domElement );
 }
 function initMyRenderer(){
   var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -609,36 +608,42 @@ function checkCollisionBoard(){
           ball.setDirection(calculateReflection(ball.getDirection(),blockNormal))
         }
         
-        
-        if(GAME_BOARD[i][j].getHealth()==0){
-          playAudio(1)
-          scene.remove(GAME_BOARD[i][j].getGameObject());
-          scene.remove(GAME_BOARD[i][j].getObjectMargin());
-          if(powerupball == null && POWER_UP_OBJECT == null){
-            powerupcount++;
+        if(GAME_BOARD[i][j].getHealth()<=0){
+          if(GAME_BOARD[i][j].getInvincibility()==true){
+            playAudio(2)
           }
-          //Power up creating
-          if(powerupcount >= 10 && powerupball == null && POWER_UP_OBJECT == null){
+          else{
+            playAudio(1)
+            scene.remove(GAME_BOARD[i][j].getGameObject());
+            scene.remove(GAME_BOARD[i][j].getObjectMargin());
+            if(powerupball == null && POWER_UP_OBJECT == null){
+              powerupcount++;
+            }
+            //Power up creating
+            if(powerupcount >= 10 && powerupball == null && POWER_UP_OBJECT == null){
 
-          console.log("Power Up Instantiated");
-          POWER_UP_OBJECT = new PowerUp.PowerUpObject(GAME_BOARD[i][j].getPosition());
-          scene.add(POWER_UP_OBJECT.getGameObject());
-          powerupcount = 0;
+            console.log("Power Up Instantiated");
+            POWER_UP_OBJECT = new PowerUp.PowerUpObject(GAME_BOARD[i][j].getPosition());
+            scene.add(POWER_UP_OBJECT.getGameObject());
+            powerupcount = 0;
 
+            }
+            GAME_BOARD[i][j].collided = true;
+            GAME_BOARD[i][j] = null;
+            POINTS++;
+            return;
           }
-          GAME_BOARD[i][j].collided = true;
-          GAME_BOARD[i][j] = null;
-          POINTS++;
-          return;
 
         }
         
         else{
 
           //BLOCK COLOR LOGIC
-          playAudio(2)
-          GAME_BOARD[i][j].setColor("rgb(80,80,80)");
-          GAME_BOARD[i][j].getGameObject().material.map = null; 
+          if(GAME_BOARD[i][j].getInvincibility==false){
+            playAudio(2)
+            GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+            GAME_BOARD[i][j].getGameObject().material.map = null; 
+          }
 
         }
       }
@@ -655,9 +660,12 @@ function checkCollisionBoard(){
           powerupball.setDirection(calculateReflection(powerupball.getDirection(), blockNormal4Power))
           //end
         
-        if(GAME_BOARD[i][j].getHealth()==0){
-          playAudio(1)
-
+          if(GAME_BOARD[i][j].getHealth()<=0){
+            if(GAME_BOARD[i][j].getInvincibility()==true){
+              playAudio(2)
+            }
+            else{
+              playAudio(1)
           scene.remove(GAME_BOARD[i][j].getGameObject());
           scene.remove(GAME_BOARD[i][j].getObjectMargin());
           if(powerupball == null && POWER_UP_OBJECT == null){
@@ -677,16 +685,17 @@ function checkCollisionBoard(){
           POINTS++;
           return;
 
-
+          }
         }
         
         
         else{
           //BLOCK COLOR LOGIC
-          playAudio(2)
-          
-          GAME_BOARD[i][j].setColor("rgb(80,80,80)");
-          GAME_BOARD[i][j].getGameObject().material.map = null; 
+          if(GAME_BOARD[i][j].getInvincibility==false){
+            playAudio(2)
+            GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+            GAME_BOARD[i][j].getGameObject().material.map = null; 
+          } 
 
         }
         }
@@ -715,20 +724,18 @@ function checkCollisionBoard(){
   }
   if(POINTS >= 112 && CURRENT_LEVEL==1){
     simulationOn = false; //set flag to next level
-    //CURRENT_LEVEL+=1;
+    CURRENT_LEVEL+=1;
     resetGame();
-    createBoard(2);
+    createBoard(3);
     simulationOn = true;
     POINTS = 0;
   }
 
-  if(POINTS >= 52 && CURRENT_LEVEL==3){
+  if(POINTS >= 52 && CURRENT_LEVEL==2){
     simulationOn = false; //set flag to next level
     //CURRENT_LEVEL+=1;
-    resetGame();
-    createBoard(1);
-    simulationOn = true;
-    POINTS = 0;
+    gameOverScreen.style.display = 'block';
+    playAudio(5);
   }
 
 
@@ -923,9 +930,9 @@ function checkDefeat(){
     //Resting speed
     ball.resetSpeed();
     if(player.getLife()==0){
-      console.log(player.getLife())
       resetGame();
       createBoard(1);
+      player.setLife(5);
     }
   }
   if(powerupball!=null)
@@ -940,14 +947,18 @@ function checkDefeat(){
 
 
 function checkKeyboard(){
+  
   if ( keyboard.down("space") ){
     simulationOn = !simulationOn;
   }
-
+  if(keyboard.down("O")){
+    simulationOn = !simulationOn;
+    orbitEnable = !orbitEnable;
+  }
   if(simulationOn) {
     if ( keyboard.down("R") ){
       resetGame();
-      createBoard(CURRENT_LEVEL%2 + 1)
+      createBoard(CURRENT_LEVEL%3 + 1)
     }
   
     if ( keyboard.down("enter") ){
@@ -1130,10 +1141,19 @@ function updateShipPosition(){
 function gameLoop(){
 
   //Handle input (Raycast to world cords)
+  if(orbitEnable) {
+    orbitControls.enabled = true;
+  } else {
+    orbitControls.enabled = false;
+    camera.position.set(0, -650, 650);
+    camera.lookAt(new THREE.Vector3(0,0,0));
+    onWindowResizeOrt();
+  }
   keyboard.update();
   let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,0,0);
 
   if(win < 64) checkKeyboard();
+  
   
 
 
@@ -1219,10 +1239,16 @@ function gameLoop(){
 
   //Render (Self explanatory)
   requestAnimationFrame(gameLoop);
+  livesDisplay.innerText= player.getLife();
+  scoreDisplay.innerText = POINTS;
   renderer.render(scene,camera);
 }
 
 
+var livesDisplay = document.getElementById('livesDisplay');
+var scoreDisplay = document.getElementById('scoreDisplay');
+livesDisplay.style.display = 'none';
+scoreDisplay.style.display = 'none';
 
   let startButton  = document.getElementById("startBtn")
   startButton.innerHTML = 'Start Game';
@@ -1230,7 +1256,7 @@ function gameLoop(){
 
   let gameOverScreen = document.getElementById('gameOver-screen');
   gameOverScreen.style.display = 'none';
-
+  
 function onButtonPressedStart() {
   let startingScreen = document.getElementById('start-screen');
   startingScreen.classList.add('hidden');
@@ -1238,6 +1264,8 @@ function onButtonPressedStart() {
       const element = e.target;
       element.remove();
   });
+  livesDisplay.style.display = 'block';
+  scoreDisplay.style.display = 'block';
   stopAudio(0);
   initGame();
   gameLoop();
@@ -1259,55 +1287,9 @@ let checkMouse = (event) => {
 window.addEventListener('click', checkMouse);
 
 
-// camera = new THREE.PerspectiveCamera(50, 0.5, 1, 2000);
-// const listener = new THREE.AudioListener();
-// camera.add(listener);
 
-// const audioLoader = new THREE.AudioLoader();
-// const audios = [
-//   './soundsMusics/bgMusic.mp3',
-//   './soundsMusics/bloco1.mp3',
-//   './soundsMusics/bloco2.mp3',
-//   './soundsMusics/bloco3.mp3',
-//   './soundsMusics/rebatedor.mp3'
-// ];
-
-// let audioObjects = audios.map((audioFile, index) => {
-//   const audio = new THREE.Audio(listener);
-
-//   // Use a callback to ensure that the audio file is loaded before proceeding
-//   audioLoader.load(audioFile, function(buffer) {
-//     audio.setBuffer(buffer);
-//     audio.setLoop(true);
-//     audio.setVolume(0.5);
-
-//     // After loading, play the audio if needed
-//     if (index === 0) {
-//       playAudio(0);
-//     }
-//   });
-
-//   return audio;
-// });
-
-// function playAudio(index) {
-//   if (audioObjects[index]) {
-//     console.log(audioObjects[index]);
-//     audioObjects[index].play();
-//   } else {
-//     console.log("ERRO");
-//   }
-// }
-
-// function stopAudio(index) {
-//   if (audioObjects[index]) {
-//     audioObjects[index].stop();
-//   }
-// }
 
 camera = new THREE.PerspectiveCamera(50, 0.5, 1, 2000);
-const listener = new THREE.AudioListener();
-camera.add(listener);
 
 const audioLoader = new THREE.AudioLoader();
 const audios = [
@@ -1315,10 +1297,14 @@ const audios = [
   './soundsMusics/bloco1.mp3',
   './soundsMusics/bloco2.mp3',
   './soundsMusics/bloco3.mp3',
-  './soundsMusics/rebatedor.mp3'
+  './soundsMusics/rebatedor.mp3',
+  './soundsMusics/gameover.mp3'
 ];
 
 let audioObjects = audios.map((audioFile, index) => {
+  const listener = new THREE.AudioListener();
+  camera.add(listener); // Each audio has its own listener
+
   const audio = new THREE.Audio(listener);
 
   // Use a callback to ensure that the audio file is loaded before proceeding
@@ -1342,10 +1328,15 @@ let audioObjects = audios.map((audioFile, index) => {
 
 function playAudio(index) {
   if (audioObjects[index]) {
-    console.log(audioObjects[index]);
-    audioObjects[index].play();
+    const audio = audioObjects[index];
+
+    if (audio.isPlaying) {
+      audio.stop();
+    }
+
+    audio.play();
   } else {
-    console.log("ERRO");
+    console.log("Error: Invalid audio index");
   }
 }
 

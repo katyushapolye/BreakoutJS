@@ -1,0 +1,26 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; 
+}
+
+#game-interface {
+    
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #000000;
+    display:table;
+    font-family: Arial, sans-serif;
+    font-size: 50px;
+    
+    
+}
+
+#game-interface p {
+    margin: 0;
+}
+
+#game-interface span {
+    font-weight: bold; 
+}
