@@ -2,10 +2,11 @@
 
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
-import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
+import {DragControls} from '../build/jsm/controls/DragControls.js'
+import {initRenderer, initCamera,initDefaultBasicLight,setDefaultMaterial,SecondaryBox,InfoBox,onWindowResize,createGroundPlaneXZ} from "../libs/util/util.js";
 import KeyboardState from '../libs/util/KeyboardState.js'
 import {GLTFLoader} from '../build/jsm/loaders/GLTFLoader.js';
-import {ColladaLoader} from '../build/jsm/loaders/ColladaLoader.js';
+
 import { normalizeAndRescale,fixPosition,getMaxSize } from './Utils.js';     
 
 
@@ -18,11 +19,37 @@ import * as Player from "./Player.js";
 import * as Block from './Block.js'
 import * as Ball from './Ball.js';  
 import * as PowerUp from './PowerUp.js';
-import { OctahedronBufferGeometry, Scene, Vector3 } from '../build/three.module.js';
+import { Scene, Vector3 } from '../build/three.module.js';
 
 import { calculateReflection, checkFaceCollision, switchFullScreen, calculateCollisionPoint, isCircleAABBCollision} from './Utils.js';
 import { color } from '../libs/util/dat.gui.module.js';
 
+import { Buttons } from "../libs/other/buttons.js";
+
+//botões e novo raycaster
+
+var dragOn = true;
+
+var buttons = new Buttons(onButtonDown, onButtonUp);
+
+var pressedA = false;              
+
+const materialTransparente = new THREE.MeshBasicMaterial({
+    color: 0x00ff00, // green color
+    opacity: 0.5, // set opacity to 50%
+  });
+
+
+var dragGuide = new THREE.Mesh(
+    new THREE.BoxGeometry(50, 50, 50), 
+    new THREE.MeshPhongMaterial({ opacity: 0.1, transparent: true }));
+
+dragGuide.castShadow = true;
+dragGuide.receiveShadow = true;
+
+dragGuide.position.set(0,-250,0);
+
+var objects = [];
 
 //Input defs
 
@@ -40,11 +67,6 @@ var keyboard = new KeyboardState();
 let leftWall = null;
 let rightWall = null;
 let topWall = null;
-let gameStarted=false;
-//audio
-
-
-
 
 
 //Game defs
@@ -54,6 +76,7 @@ const WORLD_W = 400;
 let ball = null;
 let powerupball = null;
 let player = null;
+var dragControl = null;
 let pShip = null;
 let BG = null;
 let bg4Ray= null;
@@ -67,12 +90,10 @@ let powerupballCol = null;
 let powerupballPos = null;
 let blockNormal4Power= null;
 let newColPoint= null;
-let gameOver = false;
 let levelPoints= [66, 112];
 let GAME_BOARD = Array(16).fill().map(() => Array(16).fill(null)); //EU não sei o que é isso
 let DELTA_TIME = 1/60; //Assuming the game runs at 60fps at all times 
-var orbitControls = null;
-var orbitEnable = false;
+
 let POWER_UP_OBJECT = null;
 
 //Game control defs
@@ -96,20 +117,7 @@ let SPEED_CLOCK = 0;
 let SPEED_CLOCKPU=0;
 
 
-//Raycast defs
 
-const rayOrigin = new THREE.Vector3();
-const rayDir = new THREE.Vector3(0, 0, -1);
-const raycast = new THREE.Raycaster();
-let intersections;
-
-let intersectionSphere = new THREE.Mesh(
-  new THREE.SphereGeometry(8, 30, 30, 0, Math.PI * 2, 0, Math.PI),
-  new THREE.MeshPhongMaterial({color:"orange", shininess:"200"}));
-
-let testeSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(2, 30, 30, 0, Math.PI * 2, 0, Math.PI),
-    new THREE.MeshPhongMaterial({color:"red", shininess:"200"}));
 function onWindowResizeOrt() {
   
   console.log("Resizing Camera");
@@ -154,24 +162,24 @@ function setupRenderAndCamera(){
     let viewWidth =  WORLD_W;
     let viewHeight = WORLD_H;
     
-    //camera = new THREE.PerspectiveCamera(50,0.5,1,2000)
+    camera = new THREE.PerspectiveCamera(50,0.5,1,2000)
 
 
-    window.addEventListener( 'resize', onWindowResizeOrt, false );
+    window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
+    // window.addEventListener( 'resize', onWindowResizeOrt, false );
     window.addEventListener('pointermove',onPointerMove);
     
   
     camera.position.set(0, -650, 650);
     camera.lookAt(new THREE.Vector3(0,0,0));
-    
 
 
   //Renderer Init
     renderer = initMyRenderer();    // Init a basic renderer, alreaday has a shadowmap
     renderer.setSize(viewWidth,viewHeight);
 
-  onWindowResizeOrt(); //SO por precaução
-
+  //onWindowResizeOrt(); //SO por precaução
+  onWindowResize(camera, renderer)
 
 
 
@@ -181,10 +189,6 @@ function setupRenderAndCamera(){
 	textureEquirec.encoding = THREE.sRGBEncoding;
   scene.background = textureEquirec;
 
-
-  //Orbit controls
-
-  orbitControls = new OrbitControls( camera, renderer.domElement );
 }
 function initMyRenderer(){
   var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -236,29 +240,7 @@ function setupMaterialAndLights(){
   //light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 }
 
-//Retuns the first point of intersection of a raycast from the camera, directed at the mouse position(normalized), colliding with the BG
-// Returns the first point of intersection of a raycast from the camera, directed at the mouse position (normalized),
-// colliding with the BG
-function rayCastPositionOnBG() {
-  
-  intersectionSphere.visible = false;
-  //let ray= new THREE.Vector2(pointer.x * window.innerWidth, pointer.y * window.innerHeight)
-  // rayOrigin.set(pointer.x * window.innerWidth, pointer.y * window.innerHeight, 0);
-  // raycast.set(rayOrigin, rayDir);
-  raycast.setFromCamera(pointer, camera)
-  intersections = raycast.intersectObjects([bg4Ray], false);
 
-  if (intersections.length > 0) {
-    //console.log(intersections[0].point)
-    let point = intersections[0].point;
-    intersectionSphere.visible = true;
-    //intersectionSphere.position.set(point.x*(innerWidth/380), point.y, point.z);
-    point.x= point.x*(innerWidth/500);
-    return point;
-  } else {
-    return new THREE.Vector3(0, 0, 0); // Return a default point when there are no intersections.
-  }
-}
 
 
 function setupScene(){
@@ -601,49 +583,41 @@ function checkCollisionBoard(){
         GAME_BOARD[i][j].setHealth((GAME_BOARD[i][j].getHealth() - 1 ))
 
         colPoint= calculateCollisionPoint(ballPos, retPosition);
-        testeSphere.position.set(colPoint.x, colPoint.y, 0);
-        scene.add(testeSphere)
+        
         blockNormal= checkFaceCollision(colPoint, retPosition, ball.getDirection());
         if(blockNormal!=null){
           ball.setDirection(calculateReflection(ball.getDirection(),blockNormal))
         }
         
-        if(GAME_BOARD[i][j].getHealth()<=0){
-          if(GAME_BOARD[i][j].getInvincibility()==true){
-            playAudio(2)
+        
+        if(GAME_BOARD[i][j].getHealth()==0){
+          scene.remove(GAME_BOARD[i][j].getGameObject());
+          scene.remove(GAME_BOARD[i][j].getObjectMargin());
+          if(powerupball == null && POWER_UP_OBJECT == null){
+            powerupcount++;
           }
-          else{
-            playAudio(1)
-            scene.remove(GAME_BOARD[i][j].getGameObject());
-            scene.remove(GAME_BOARD[i][j].getObjectMargin());
-            if(powerupball == null && POWER_UP_OBJECT == null){
-              powerupcount++;
-            }
-            //Power up creating
-            if(powerupcount >= 10 && powerupball == null && POWER_UP_OBJECT == null){
+          //Power up creating
+          if(powerupcount >= 10 && powerupball == null && POWER_UP_OBJECT == null){
 
-            console.log("Power Up Instantiated");
-            POWER_UP_OBJECT = new PowerUp.PowerUpObject(GAME_BOARD[i][j].getPosition());
-            scene.add(POWER_UP_OBJECT.getGameObject());
-            powerupcount = 0;
+          console.log("Power Up Instantiated");
+          POWER_UP_OBJECT = new PowerUp.PowerUpObject(GAME_BOARD[i][j].getPosition());
+          scene.add(POWER_UP_OBJECT.getGameObject());
+          powerupcount = 0;
 
-            }
-            GAME_BOARD[i][j].collided = true;
-            GAME_BOARD[i][j] = null;
-            POINTS++;
-            return;
           }
+          GAME_BOARD[i][j].collided = true;
+          GAME_BOARD[i][j] = null;
+          POINTS++;
+          return;
 
         }
         
         else{
 
           //BLOCK COLOR LOGIC
-          if(GAME_BOARD[i][j].getInvincibility==false){
-            playAudio(2)
-            GAME_BOARD[i][j].setColor("rgb(80,80,80)");
-            GAME_BOARD[i][j].getGameObject().material.map = null; 
-          }
+          
+          GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+          GAME_BOARD[i][j].getGameObject().material.map = null; 
 
         }
       }
@@ -660,12 +634,8 @@ function checkCollisionBoard(){
           powerupball.setDirection(calculateReflection(powerupball.getDirection(), blockNormal4Power))
           //end
         
-          if(GAME_BOARD[i][j].getHealth()<=0){
-            if(GAME_BOARD[i][j].getInvincibility()==true){
-              playAudio(2)
-            }
-            else{
-              playAudio(1)
+        if(GAME_BOARD[i][j].getHealth()==0){
+
           scene.remove(GAME_BOARD[i][j].getGameObject());
           scene.remove(GAME_BOARD[i][j].getObjectMargin());
           if(powerupball == null && POWER_UP_OBJECT == null){
@@ -685,17 +655,15 @@ function checkCollisionBoard(){
           POINTS++;
           return;
 
-          } 
+
         }
         
         
         else{
           //BLOCK COLOR LOGIC
-          if(GAME_BOARD[i][j].getInvincibility==false){
-            playAudio(2)
-            GAME_BOARD[i][j].setColor("rgb(80,80,80)");
-            GAME_BOARD[i][j].getGameObject().material.map = null; 
-          } 
+          
+          GAME_BOARD[i][j].setColor("rgb(80,80,80)");
+          GAME_BOARD[i][j].getGameObject().material.map = null; 
 
         }
         }
@@ -724,18 +692,20 @@ function checkCollisionBoard(){
   }
   if(POINTS >= 112 && CURRENT_LEVEL==1){
     simulationOn = false; //set flag to next level
-    CURRENT_LEVEL+=1;
+    //CURRENT_LEVEL+=1;
     resetGame();
-    createBoard(3);
+    createBoard(2);
     simulationOn = true;
     POINTS = 0;
   }
 
-  if(POINTS >= 52 && CURRENT_LEVEL==2){
+  if(POINTS >= 52 && CURRENT_LEVEL==3){
     simulationOn = false; //set flag to next level
     //CURRENT_LEVEL+=1;
-    gameOverScreen.style.display = 'block';
-    playAudio(5);
+    resetGame();
+    createBoard(1);
+    simulationOn = true;
+    POINTS = 0;
   }
 
 
@@ -809,9 +779,7 @@ function checkCollisionPlayer(){
         };
       }
       minimumVet.normalize();
-      playAudio(4);
       ball.setDirection(minimumVet);
-      
 
 
   }
@@ -867,9 +835,7 @@ function checkCollisionPlayer(){
           };
         }
         minimumVet.normalize();
-        playAudio(4)
         powerupball.setDirection(minimumVet);
-        
   
   
     }
@@ -926,14 +892,9 @@ function checkDefeat(){
     ball.setDirection(new Vector3(0,0,0))
     ball.setPosition(ballPos);
     isPlayerWithBall = true;
-    player.setLife(player.getLife() - 1);
+
     //Resting speed
     ball.resetSpeed();
-    if(player.getLife()==0){
-      resetGame();
-      createBoard(1);
-      player.setLife(5);
-    }
   }
   if(powerupball!=null)
     if(powerupball.getPosition().y < -500) {
@@ -944,21 +905,27 @@ function checkDefeat(){
     }
 }
 
+let releaseBall = () => {
+  if(simulationOn) {
+      if(isPlayerWithBall) {
+        // esse if é necessário porque se não sempre que apertar space a bola sobe
+        isPlayerWithBall = false;
+        ball.setDirection(new THREE.Vector3(0,1,0));
+        console.log("Ball is Released");
+      }
+  }
+}
 
 
 function checkKeyboard(){
-  
   if ( keyboard.down("space") ){
     simulationOn = !simulationOn;
   }
-  if(keyboard.down("O")){
-    simulationOn = !simulationOn;
-    orbitEnable = !orbitEnable;
-  }
+
   if(simulationOn) {
     if ( keyboard.down("R") ){
       resetGame();
-      createBoard(CURRENT_LEVEL%3 + 1)
+      createBoard(CURRENT_LEVEL%2 + 1)
     }
   
     if ( keyboard.down("enter") ){
@@ -1016,6 +983,8 @@ function resetGame(){
 
 }
 
+  
+
 //Init function
 function initGame(){
 
@@ -1028,6 +997,8 @@ function initGame(){
   //Init of player
   player = new Player.Player()
   scene.add(player.getGameObject());
+  
+
   //creating ship
 
 
@@ -1066,8 +1037,6 @@ function initGame(){
 
 
   player.setPosition(new THREE.Vector3(0,-250,0));
-
-  scene.add(player.getDebug())
 
 
 
@@ -1136,32 +1105,57 @@ function updateShipPosition(){
   }
 }
 
+function onButtonDown(event) {
+    switch(event.target.id)
+    {
+      case "A":
+        pressedA = true;
+       break;
+      case "B":
+        pressedB = true;
+      break;    
+      case "full":
+        buttons.setFullScreen();
+      break;    
+    }
+  }
+  
+  function onButtonUp(event) {
+    pressedA = false;
+  }
+  
+  function executeIfKeyPressed()
+  {
+    if(pressedA)
+    {
+      releaseBall();
+    }
+  }
 
 //Game loop
 function gameLoop(){
+  var positionDragGuide = new THREE.Vector3();
+  positionDragGuide.setFromMatrixPosition( dragGuide.matrixWorld );
 
-  //Handle input (Raycast to world cords)
-  if(orbitEnable) {
-    orbitControls.enabled = true;
-  } else {
-    orbitControls.enabled = false;
-    camera.position.set(0, -650, 650);
-    camera.lookAt(new THREE.Vector3(0,0,0));
-    onWindowResizeOrt();
-  }
+  dragGuide.position.setZ(0);
+  dragGuide.position.setY(-250);
+
   keyboard.update();
-  let pTarget = new THREE.Vector3(rayCastPositionOnBG().x,0,0);
+  let pTarget = new THREE.Vector3(positionDragGuide.x,0,0);
+
+  executeIfKeyPressed();
 
   if(win < 64) checkKeyboard();
-  
-  
 
+  if (dragOn) {
+    dragControl.activate(); //    
+  }
+  else {
+    dragControl.deactivate();            
+  }
 
   //Process Game logic (Check colision/Reflection,Check death and collision culling,move player to target position)
   
- 
-  
-
 
   if(isPlayerWithBall){
 
@@ -1239,123 +1233,19 @@ function gameLoop(){
 
   //Render (Self explanatory)
   requestAnimationFrame(gameLoop);
-  livesDisplay.innerText= player.getLife();
-  scoreDisplay.innerText = POINTS;
   renderer.render(scene,camera);
 }
 
 
-var livesDisplay = document.getElementById('livesDisplay');
-var scoreDisplay = document.getElementById('scoreDisplay');
-livesDisplay.style.display = 'none';
-scoreDisplay.style.display = 'none';
-
-  let startButton  = document.getElementById("startBtn")
-  startButton.innerHTML = 'Start Game';
-  startButton.addEventListener("click", onButtonPressedStart);
-
-  let gameOverScreen = document.getElementById('gameOver-screen');
-  gameOverScreen.style.display = 'none';
-  
-function onButtonPressedStart() {
-  let startingScreen = document.getElementById('start-screen');
-  startingScreen.classList.add('hidden');
-  startingScreen.addEventListener('transitionend', (e) => {
-      const element = e.target;
-      element.remove();
-  });
-  livesDisplay.style.display = 'block';
-  scoreDisplay.style.display = 'block';
-  stopAudio(0);
-  initGame();
-  gameLoop();
-}
 
 
-let checkMouse = (event) => {
-    if(simulationOn){
-      if(event.button == 0) {
-        if(isPlayerWithBall) {
-          // esse if é necessário porque se não sempre que apertar space a bola sobe
-          isPlayerWithBall = false;
-          ball.setDirection(new THREE.Vector3(0,1,0));
-          console.log("Ball is Released");
-        }
-      }
-    }
-}
-window.addEventListener('click', checkMouse);
+initGame();
 
+// CREATE DRAG OBJECT
+scene.add(dragGuide);
+objects.push(dragGuide);
+dragControl = new DragControls(objects, camera, renderer.domElement);
 
-
-
-camera = new THREE.PerspectiveCamera(50, 0.5, 1, 2000);
-
-const audioLoader = new THREE.AudioLoader();
-const audios = [
-  './soundsMusics/bgMusic.mp3',
-  './soundsMusics/bloco1.mp3',
-  './soundsMusics/bloco2.mp3',
-  './soundsMusics/bloco3.mp3',
-  './soundsMusics/rebatedor.mp3',
-  './soundsMusics/gameover.mp3'
-];
-
-let audioObjects = audios.map((audioFile, index) => {
-  const listener = new THREE.AudioListener();
-  camera.add(listener); // Each audio has its own listener
-
-  const audio = new THREE.Audio(listener);
-
-  // Use a callback to ensure that the audio file is loaded before proceeding
-  audioLoader.load(audioFile, function(buffer) {
-    audio.setBuffer(buffer);
-    audio.setVolume(0.5);
-
-    // Set loop only for the first audio
-    if (index === 0) {
-      audio.setLoop(true);
-    }
-
-    // After loading, play the audio if needed
-    if (index === 0) {
-      playAudio(0);
-    }
-  });
-
-  return audio;
-});
-
-function playAudio(index) {
-  if (audioObjects[index]) {
-    const audio = audioObjects[index];
-
-    if (audio.isPlaying) {
-      audio.stop();
-    }
-
-    audio.play();
-  } else {
-    console.log("Error: Invalid audio index");
-  }
-}
-
-function stopAudio(index) {
-  if (audioObjects[index]) {
-    audioObjects[index].stop();
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
+gameLoop();
 
 
